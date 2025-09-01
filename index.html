@@ -4,11 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Anagram Solver</title>
+    
+    <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
+    
+    <!-- Theme and Colors -->
     <meta name="theme-color" content="#3b82f6">
+    <meta name="msapplication-navbutton-color" content="#3b82f6">
+    <meta name="msapplication-TileColor" content="#3b82f6">
+    
+    <!-- Apple Mobile Web App -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Anagram Solver">
+    
+    <!-- Android specific -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Anagram Solver">
+    
+    <!-- Description for search engines and PWA -->
+    <meta name="description" content="Find anagrams from any set of letters - works offline! A fun word puzzle game.">
+    <meta name="keywords" content="anagram, word puzzle, letters, word game, offline, PWA">
+    
+    <!-- Prevent automatic detection -->
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iNCIgZmlsbD0iIzNiODJmNiIvPgo8cGF0aCBkPSJtMTIgNSAzLjA5IDYuMjZMMjEgMTJsLTUuOTEgMS43NEwxMiAxOWwtMy4wOS02LjI2TDMgMTJsNS45MS0xLjc0TDEyIDV6IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4=">
     <style>
         /* Reset and base styles */
         * {
@@ -501,12 +523,91 @@
             }
         });
 
-        // --- PWA Service Worker Registration ---
+        // --- PWA Service Worker Registration and Install Prompt ---
+        let deferredPrompt;
+        
+        // Listen for the beforeinstallprompt event
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('PWA install prompt available');
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            // Show the install button
+            showInstallPrompt();
+        });
+
+        // Listen for the app being installed
+        window.addEventListener('appinstalled', (e) => {
+            console.log('PWA was installed');
+            hideInstallPrompt();
+            deferredPrompt = null;
+        });
+
+        function showInstallPrompt() {
+            // Create install button if it doesn't exist
+            let installButton = document.getElementById('installButton');
+            if (!installButton) {
+                installButton = document.createElement('button');
+                installButton.id = 'installButton';
+                installButton.innerHTML = '📱 Install App';
+                installButton.className = 'install-button bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition-all duration-300';
+                installButton.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    z-index: 1000;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 14px;
+                `;
+                
+                installButton.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        // Show the install prompt
+                        deferredPrompt.prompt();
+                        // Wait for the user to respond to the prompt
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log(`User response to the install prompt: ${outcome}`);
+                        // Clear the deferredPrompt variable
+                        deferredPrompt = null;
+                        // Hide the install button
+                        hideInstallPrompt();
+                    }
+                });
+                
+                document.body.appendChild(installButton);
+            }
+            installButton.style.display = 'block';
+        }
+
+        function hideInstallPrompt() {
+            const installButton = document.getElementById('installButton');
+            if (installButton) {
+                installButton.style.display = 'none';
+            }
+        }
+
+        // Register service worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', async () => {
                 try {
                     const registration = await navigator.serviceWorker.register('/sw.js');
                     console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    
+                    // Handle service worker updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('New service worker installed, refreshing...');
+                                // Optionally show a notification about the update
+                                if (confirm('App updated! Refresh to get the latest version?')) {
+                                    window.location.reload();
+                                }
+                            }
+                        });
+                    });
                 } catch (error) {
                     console.log('ServiceWorker registration failed: ', error);
                 }
