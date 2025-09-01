@@ -1,4 +1,4 @@
-const CACHE_NAME = 'anagram-solver-v1';
+const CACHE_NAME = 'anagram-solver-v2';
 const urlsToCache = [
     '/',
     '/index.html',
