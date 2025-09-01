@@ -205,6 +205,85 @@
         /* Button transition effects */
         .transition { transition: all 0.3s ease; }
         .transform { transform: translateZ(0); }
+        
+        /* Tab styles */
+        .tab {
+            background-color: #e5e7eb;
+            color: #374151;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem 0.5rem 0 0;
+            border: 1px solid #d1d5db;
+            border-bottom: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .tab.active {
+            background-color: #f9fafb;
+            color: #111827;
+            z-index: 1;
+        }
+        
+        .tab:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .tab.active:hover {
+            background-color: #f9fafb;
+        }
+        
+        .tab-close {
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background-color: #6b7280;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+        
+        .tab-close:hover {
+            background-color: #ef4444;
+        }
+        
+        /* Dark mode tab styles */
+        @media (prefers-color-scheme: dark) {
+            .tab {
+                background-color: #374151;
+                color: #d1d5db;
+                border-color: #4b5563;
+            }
+            
+            .tab.active {
+                background-color: #111827;
+                color: #f9fafb;
+            }
+            
+            .tab:hover {
+                background-color: #4b5563;
+            }
+            
+            .tab.active:hover {
+                background-color: #111827;
+            }
+            
+            .tab-close {
+                background-color: #9ca3af;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -245,6 +324,14 @@
                     </svg>
                 </button>
             </div>
+            
+            <!-- Tab Navigation -->
+            <div id="tabContainer" class="mb-4">
+                <div id="tabList" class="flex gap-1 overflow-x-auto">
+                    <!-- Tabs will be inserted here -->
+                </div>
+            </div>
+            
             <div id="loader" class="flex justify-center items-center h-32">
                 <div class="loader"></div>
             </div>
@@ -265,8 +352,12 @@
         const closeModalButton = document.getElementById('closeModalButton');
         const resultsContent = document.getElementById('resultsContent');
         const loader = document.getElementById('loader');
+        const tabContainer = document.getElementById('tabContainer');
+        const tabList = document.getElementById('tabList');
 
         let currentLetters = '';
+        let tabs = [];
+        let activeTabId = null;
 
         const calculateTileSize = (letterCount, containerWidth, containerHeight) => {
             if (letterCount === 0) return { tileSize: 60, fontSize: 36 };
@@ -441,8 +532,94 @@
             }
         }
 
-        const showModal = () => resultsModal.classList.remove('hidden');
+        const showModal = () => {
+            resultsModal.classList.remove('hidden');
+            updateTabDisplay();
+        };
         const hideModal = () => resultsModal.classList.add('hidden');
+
+        const createTab = (letters, result) => {
+            const tabId = Date.now().toString();
+            const tab = {
+                id: tabId,
+                letters: letters,
+                result: result
+            };
+            tabs.push(tab);
+            return tabId;
+        };
+
+        const removeTab = (tabId) => {
+            const tabIndex = tabs.findIndex(tab => tab.id === tabId);
+            if (tabIndex === -1) return;
+            
+            tabs.splice(tabIndex, 1);
+            
+            if (activeTabId === tabId) {
+                if (tabs.length > 0) {
+                    activeTabId = tabs[tabs.length - 1].id;
+                } else {
+                    activeTabId = null;
+                    hideModal();
+                    return;
+                }
+            }
+            
+            updateTabDisplay();
+            displayActiveTab();
+        };
+
+        const switchToTab = (tabId) => {
+            activeTabId = tabId;
+            updateTabDisplay();
+            displayActiveTab();
+        };
+
+        const updateTabDisplay = () => {
+            tabList.innerHTML = '';
+            
+            if (tabs.length === 0) {
+                tabContainer.style.display = 'none';
+                return;
+            }
+            
+            tabContainer.style.display = 'block';
+            
+            tabs.forEach(tab => {
+                const tabElement = document.createElement('div');
+                tabElement.className = `tab ${tab.id === activeTabId ? 'active' : ''}`;
+                
+                const tabLabel = document.createElement('span');
+                tabLabel.textContent = tab.letters.toUpperCase();
+                tabLabel.style.cursor = 'pointer';
+                
+                const closeButton = document.createElement('button');
+                closeButton.className = 'tab-close';
+                closeButton.innerHTML = '×';
+                closeButton.onclick = (e) => {
+                    e.stopPropagation();
+                    removeTab(tab.id);
+                };
+                
+                tabElement.appendChild(tabLabel);
+                tabElement.appendChild(closeButton);
+                
+                tabElement.onclick = () => switchToTab(tab.id);
+                tabList.appendChild(tabElement);
+            });
+        };
+
+        const displayActiveTab = () => {
+            if (!activeTabId) {
+                resultsContent.innerHTML = '';
+                return;
+            }
+            
+            const activeTab = tabs.find(tab => tab.id === activeTabId);
+            if (activeTab) {
+                displayResults(activeTab.result);
+            }
+        };
 
         const displayResults = (result) => {
             resultsContent.innerHTML = '';
@@ -480,12 +657,25 @@
 
         findAnagramsButton.addEventListener('click', async () => {
             if (currentLetters.length < 2) return;
+            
+            // Check if we already have a tab for these letters
+            const existingTab = tabs.find(tab => tab.letters === currentLetters);
+            if (existingTab) {
+                activeTabId = existingTab.id;
+                showModal();
+                return;
+            }
+            
             showModal();
             loader.style.display = 'flex';
             resultsContent.innerHTML = '';
+            
             try {
                 const result = await findAnagramsHybrid(currentLetters);
-                displayResults(result);
+                const tabId = createTab(currentLetters, result);
+                activeTabId = tabId;
+                updateTabDisplay();
+                displayActiveTab();
             } catch (error) {
                 console.error('Failed to get anagrams:', error);
                 resultsContent.innerHTML = `<p class="text-red-500">Sorry, something went wrong. Please try again.</p>`;
