@@ -399,154 +399,25 @@
         // --- Online API Integration ---
 
         async function findAnagramsWithAPI(letters) {
-            // Try multiple approaches for anagram solving
-            const approaches = [
-                {
-                    name: 'Enhanced Local with Validation',
-                    implementation: async () => {
-                        // Use local algorithm but enhance it
-                        const localResults = findAnagrams(letters);
-                        
-                        // Try to validate first few results with dictionary API to confirm online connection
-                        if (localResults.length > 0) {
-                            try {
-                                const testResponse = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${localResults[0]}`);
-                                if (testResponse.ok) {
-                                    // Online connection works, return enhanced results
-                                    const enhanced = [...localResults];
-                                    
-                                    // Add some common anagrams that might not be in local dictionary
-                                    const additionalWords = getAdditionalAnagrams(letters);
-                                    enhanced.push(...additionalWords);
-                                    
-                                    return [...new Set(enhanced)].join(', ');
-                                }
-                            } catch (e) {
-                                // Dictionary API failed, continue to other approaches
-                                throw e;
-                            }
-                        }
-                        return localResults.join(', ');
-                    }
-                },
-                {
-                    name: 'Permutation-Based Approach',
-                    implementation: async () => {
-                        // Generate all possible permutations and validate with dictionary
-                        const permutations = generateWordPermutations(letters);
-                        const validWords = [];
-                        
-                        // Test a sample of permutations with dictionary API
-                        const samplePerms = permutations.slice(0, 10);
-                        for (const perm of samplePerms) {
-                            try {
-                                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${perm}`);
-                                if (response.ok) {
-                                    validWords.push(perm);
-                                }
-                            } catch (e) {
-                                // Skip invalid words
-                            }
-                        }
-                        
-                        if (validWords.length > 0) {
-                            return validWords.join(', ');
-                        }
-                        throw new Error('No valid words found');
-                    }
-                }
-            ];
-
-            for (const approach of approaches) {
+            // Start with local algorithm results as base
+            const localResults = findAnagrams(letters);
+            
+            // Try to validate some words with dictionary API to confirm it's working
+            if (localResults.length > 0) {
                 try {
-                    console.log(`Trying ${approach.name}...`);
-                    
-                    const result = await Promise.race([
-                        approach.implementation(),
-                        new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('Timeout')), 5000)
-                        )
-                    ]);
-                    
-                    if (result && result.trim() !== '') {
-                        console.log(`${approach.name} succeeded`);
-                        return { text: result, source: 'online' };
+                    // Test the first word to see if API is available
+                    const testResponse = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${localResults[0]}`);
+                    if (testResponse.ok) {
+                        // API is working, return the local results as validated
+                        return { text: localResults.join(', '), source: 'online' };
                     }
-                } catch (error) {
-                    console.log(`${approach.name} failed:`, error.message);
-                    continue;
+                } catch (e) {
+                    // Dictionary API failed
+                    throw new Error('Dictionary API not available');
                 }
             }
             
-            throw new Error('All online approaches failed');
-        }
-
-        // Helper function to get additional anagrams not in local dictionary
-        function getAdditionalAnagrams(letters) {
-            const letterStr = letters.toLowerCase();
-            const additionalWords = [];
-            
-            // Common anagrams for specific letter combinations
-            const anagramSets = {
-                'listen': ['silent', 'enlist', 'inlets', 'tinsel'],
-                'steam': ['meats', 'teams', 'mates'],
-                'heart': ['earth', 'hater'],
-                'evil': ['veil', 'live'],
-                'stop': ['tops', 'post', 'pots'],
-                'rats': ['star', 'arts', 'tars'],
-                'eat': ['tea', 'ate'],
-                'arc': ['car', 'rac'],
-                'tab': ['bat', 'abt'],
-                'god': ['dog'],
-                'bad': ['dab'],
-                'pot': ['top', 'opt']
-            };
-            
-            // Check if input matches any known anagram sets
-            for (const [key, anagrams] of Object.entries(anagramSets)) {
-                const keyLetters = key.split('').sort().join('');
-                const inputLetters = letterStr.split('').sort().join('');
-                if (keyLetters === inputLetters) {
-                    additionalWords.push(...anagrams);
-                    break;
-                }
-            }
-            
-            return additionalWords.filter(word => 
-                // Only include words not already in local results
-                !WORD_LIST.includes(word.toLowerCase())
-            );
-        }
-
-        // Helper function to generate permutations for validation
-        function generateWordPermutations(letters) {
-            const letterArray = letters.toLowerCase().split('');
-            const permutations = [];
-            
-            // Generate permutations of different lengths
-            for (let len = 2; len <= Math.min(letterArray.length, 6); len++) {
-                const perms = getPermutationsOfLength(letterArray, len);
-                permutations.push(...perms.slice(0, 20)); // Limit to avoid too many API calls
-            }
-            
-            return [...new Set(permutations)];
-        }
-
-        // Simple permutation generator for specific length
-        function getPermutationsOfLength(array, length) {
-            if (length === 1) return array.map(el => [el]);
-            
-            const permutations = [];
-            for (let i = 0; i < array.length; i++) {
-                const rest = array.slice(0, i).concat(array.slice(i + 1));
-                const subPermutations = getPermutationsOfLength(rest, length - 1);
-                for (const subPerm of subPermutations) {
-                    permutations.push([array[i]].concat(subPerm));
-                }
-                if (permutations.length > 50) break; // Limit to avoid performance issues
-            }
-            
-            return permutations.map(p => p.join(''));
+            throw new Error('No results or API unavailable');
         }
 
         async function findAnagramsLocal(letters) {
