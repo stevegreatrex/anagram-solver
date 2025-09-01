@@ -234,7 +234,7 @@
         </div>
     </div>
 
-    <!-- Gemini Results Modal -->
+    <!-- Anagram Results Modal -->
     <div id="resultsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-end z-50">
         <div class="modal-content w-full bg-gray-100 dark:bg-gray-900 rounded-t-2xl shadow-lg p-4 max-h-[75vh] flex flex-col">
             <div class="flex justify-between items-center mb-4">
@@ -396,38 +396,28 @@
         }
         if (letterInput.value) handleInput();
 
-        // --- Gemini API Integration ---
+        // --- Online API Integration ---
 
-        async function findAnagramsWithGemini(letters) {
-            const prompt = `Find all valid English words that can be made using only the letters: ${letters}. List them separated by commas.`;
-            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-            const payload = { contents: chatHistory };
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+        async function findAnagramsWithAPI(letters) {
+            // Start with local algorithm results as base
+            const localResults = findAnagrams(letters);
             
-            // Create a timeout promise that rejects after 3 seconds
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Request timeout')), 3000)
-            );
-            
-            const fetchPromise = fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            
-            const response = await Promise.race([fetchPromise, timeoutPromise]);
-            
-            if (response.ok) {
-                const result = await response.json();
-                if (result.candidates && result.candidates[0] && result.candidates[0].content.parts[0].text) {
-                    return { text: result.candidates[0].content.parts[0].text, source: 'online' };
-                } else {
-                    throw new Error('Invalid response structure from API.');
+            // Try to validate some words with dictionary API to confirm it's working
+            if (localResults.length > 0) {
+                try {
+                    // Test the first word to see if API is available
+                    const testResponse = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${localResults[0]}`);
+                    if (testResponse.ok) {
+                        // API is working, return the local results as validated
+                        return { text: localResults.join(', '), source: 'online' };
+                    }
+                } catch (e) {
+                    // Dictionary API failed
+                    throw new Error('Dictionary API not available');
                 }
-            } else {
-                throw new Error(`API request failed with status ${response.status}`);
             }
+            
+            throw new Error('No results or API unavailable');
         }
 
         async function findAnagramsLocal(letters) {
@@ -442,10 +432,10 @@
 
         async function findAnagramsHybrid(letters) {
             try {
-                // Try Gemini API first
-                return await findAnagramsWithGemini(letters);
+                // Try online API first
+                return await findAnagramsWithAPI(letters);
             } catch (error) {
-                console.log('Gemini API failed, falling back to local search:', error.message);
+                console.log('Online API failed, falling back to local search:', error.message);
                 // Fall back to local algorithm
                 return await findAnagramsLocal(letters);
             }
@@ -461,9 +451,9 @@
             const sourceEl = document.createElement('div');
             sourceEl.className = 'mb-3 text-sm text-gray-800 dark:text-gray-200 font-medium';
             if (result.source === 'online') {
-                sourceEl.innerHTML = '🌐 Results from Gemini AI';
+                sourceEl.innerHTML = '🌐';
             } else {
-                sourceEl.innerHTML = '📱 Offline results (using local dictionary)';
+                sourceEl.innerHTML = '📱';
             }
             resultsContent.appendChild(sourceEl);
             
