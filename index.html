@@ -6,7 +6,7 @@
     <title>Anagram Solver</title>
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="./manifest.json">
     
     <!-- Theme and Colors -->
     <meta name="theme-color" content="#3b82f6">
@@ -21,6 +21,9 @@
     <!-- Android specific -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Anagram Solver">
+    <meta name="google" content="notranslate">
+    <meta name="HandheldFriendly" content="true">
+    <meta name="MobileOptimized" content="width">
     
     <!-- Description for search engines and PWA -->
     <meta name="description" content="Find anagrams from any set of letters - works offline! A fun word puzzle game.">
@@ -537,6 +540,14 @@
             showInstallPrompt();
         });
 
+        // Check if app is already installed
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                console.log('App is running in standalone mode');
+                // App is already installed
+            }
+        });
+
         // Listen for the app being installed
         window.addEventListener('appinstalled', (e) => {
             console.log('PWA was installed');
@@ -592,7 +603,9 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', async () => {
                 try {
-                    const registration = await navigator.serviceWorker.register('/sw.js');
+                    const registration = await navigator.serviceWorker.register('./sw.js', {
+                        scope: './'
+                    });
                     console.log('ServiceWorker registration successful with scope: ', registration.scope);
                     
                     // Handle service worker updates
