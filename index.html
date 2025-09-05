@@ -42,44 +42,185 @@
             box-sizing: border-box;
         }
         
+        /* CSS Custom Properties for Theme System */
+        :root {
+            /* Classic Theme (default) */
+            --bg-primary: #f3f4f6;
+            --bg-secondary: #ffffff;
+            --bg-accent: #1f2937;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-accent: #ffffff;
+            --tile-bg: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            --tile-text: #ffffff;
+            --tile-shadow: rgba(59, 130, 246, 0.3);
+            --button-primary: #3b82f6;
+            --button-primary-hover: #1d4ed8;
+            --button-secondary: #ffffff;
+            --button-secondary-hover: #f3f4f6;
+            --modal-bg: #f3f4f6;
+            --modal-content: #ffffff;
+            --border-color: #e5e7eb;
+            --border-focus: #3b82f6;
+            --word-chip-bg: #eff6ff;
+            --word-chip-text: #1e3a8a;
+            --word-chip-border: #c3ddfd;
+        }
+        
+        /* Warm Sunset Theme */
+        .theme-sunset:root {
+            --bg-primary: linear-gradient(135deg, #fef3e2, #fed7aa);
+            --bg-secondary: #ffffff;
+            --bg-accent: #451a03;
+            --text-primary: #451a03;
+            --text-secondary: #a16207;
+            --text-accent: #ffffff;
+            --tile-bg: linear-gradient(135deg, #f97316, #ea580c);
+            --tile-text: #ffffff;
+            --tile-shadow: rgba(249, 115, 22, 0.4);
+            --button-primary: #f97316;
+            --button-primary-hover: #ea580c;
+            --button-secondary: #ffffff;
+            --button-secondary-hover: #fef3e2;
+            --modal-bg: #fef3e2;
+            --modal-content: #ffffff;
+            --border-color: #fed7aa;
+            --border-focus: #f97316;
+            --word-chip-bg: #fff7ed;
+            --word-chip-text: #9a3412;
+            --word-chip-border: #fed7aa;
+        }
+        
+        /* Warm Sunset Dark Theme */
+        .theme-sunset-dark:root {
+            --bg-primary: linear-gradient(135deg, #451a03, #7c2d12);
+            --bg-secondary: #7c2d12;
+            --bg-accent: #451a03;
+            --text-primary: #fed7aa;
+            --text-secondary: #fdba74;
+            --text-accent: #ffffff;
+            --tile-bg: linear-gradient(135deg, #f97316, #fb923c);
+            --tile-text: #ffffff;
+            --tile-shadow: rgba(251, 146, 60, 0.4);
+            --button-primary: #f97316;
+            --button-primary-hover: #fb923c;
+            --button-secondary: #7c2d12;
+            --button-secondary-hover: #92400e;
+            --modal-bg: #7c2d12;
+            --modal-content: #92400e;
+            --border-color: #92400e;
+            --border-focus: #f97316;
+            --word-chip-bg: #92400e;
+            --word-chip-text: #fed7aa;
+            --word-chip-border: #a16207;
+        }
+        
+        /* Ocean Depths Theme */
+        .theme-ocean:root {
+            --bg-primary: linear-gradient(135deg, #ecfeff, #cffafe);
+            --bg-secondary: #ffffff;
+            --bg-accent: #164e63;
+            --text-primary: #164e63;
+            --text-secondary: #0891b2;
+            --text-accent: #ffffff;
+            --tile-bg: linear-gradient(135deg, #0891b2, #0e7490);
+            --tile-text: #ffffff;
+            --tile-shadow: rgba(8, 145, 178, 0.4);
+            --button-primary: #0891b2;
+            --button-primary-hover: #0e7490;
+            --button-secondary: #ffffff;
+            --button-secondary-hover: #ecfeff;
+            --modal-bg: #ecfeff;
+            --modal-content: #ffffff;
+            --border-color: #a7f3d0;
+            --border-focus: #0891b2;
+            --word-chip-bg: #f0fdfa;
+            --word-chip-text: #134e4a;
+            --word-chip-border: #a7f3d0;
+        }
+        
+        /* Ocean Depths Dark Theme */
+        .theme-ocean-dark:root {
+            --bg-primary: linear-gradient(135deg, #164e63, #0c4a6e);
+            --bg-secondary: #0c4a6e;
+            --bg-accent: #164e63;
+            --text-primary: #cffafe;
+            --text-secondary: #67e8f9;
+            --text-accent: #ffffff;
+            --tile-bg: linear-gradient(135deg, #0891b2, #22d3ee);
+            --tile-text: #ffffff;
+            --tile-shadow: rgba(34, 211, 238, 0.4);
+            --button-primary: #0891b2;
+            --button-primary-hover: #22d3ee;
+            --button-secondary: #0c4a6e;
+            --button-secondary-hover: #075985;
+            --modal-bg: #0c4a6e;
+            --modal-content: #075985;
+            --border-color: #075985;
+            --border-focus: #0891b2;
+            --word-chip-bg: #075985;
+            --word-chip-text: #cffafe;
+            --word-chip-border: #0891b2;
+        }
+        
+        /* Forest Nature Theme */
+        .theme-forest:root {
+            --bg-primary: linear-gradient(135deg, #f7fee7, #ecfccb);
+            --bg-secondary: #ffffff;
+            --bg-accent: #365314;
+            --text-primary: #365314;
+            --text-secondary: #65a30d;
+            --text-accent: #ffffff;
+            --tile-bg: linear-gradient(135deg, #65a30d, #4d7c0f);
+            --tile-text: #ffffff;
+            --tile-shadow: rgba(101, 163, 13, 0.4);
+            --button-primary: #65a30d;
+            --button-primary-hover: #4d7c0f;
+            --button-secondary: #ffffff;
+            --button-secondary-hover: #f7fee7;
+            --modal-bg: #f7fee7;
+            --modal-content: #ffffff;
+            --border-color: #d9f99d;
+            --border-focus: #65a30d;
+            --word-chip-bg: #f7fee7;
+            --word-chip-text: #365314;
+            --word-chip-border: #d9f99d;
+        }
+        
+        /* Forest Nature Dark Theme */
+        .theme-forest-dark:root {
+            --bg-primary: linear-gradient(135deg, #365314, #1a2e05);
+            --bg-secondary: #1a2e05;
+            --bg-accent: #365314;
+            --text-primary: #d9f99d;
+            --text-secondary: #bef264;
+            --text-accent: #ffffff;
+            --tile-bg: linear-gradient(135deg, #65a30d, #84cc16);
+            --tile-text: #ffffff;
+            --tile-shadow: rgba(132, 204, 22, 0.4);
+            --button-primary: #65a30d;
+            --button-primary-hover: #84cc16;
+            --button-secondary: #1a2e05;
+            --button-secondary-hover: #365314;
+            --modal-bg: #1a2e05;
+            --modal-content: #365314;
+            --border-color: #365314;
+            --border-focus: #65a30d;
+            --word-chip-bg: #365314;
+            --word-chip-text: #d9f99d;
+            --word-chip-border: #65a30d;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             overscroll-behavior-y: contain;
             overflow: hidden;
-            background-color: #f3f4f6;
-            color: #111827;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             line-height: 1.5;
+            transition: background 0.3s ease, color 0.3s ease;
         }
-        
-        /* Dark mode */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background-color: #111827;
-                color: #f9fafb;
-            }
-            
-            .bg-white { background-color: #1f2937 !important; }
-            .bg-gray-100 { background-color: #111827 !important; }
-            .bg-gray-800 { background-color: #1f2937 !important; }
-            .bg-blue-50 { background-color: #1e40af !important; }
-            .bg-blue-900 { background-color: #1e40af !important; }
-            .text-gray-900 { color: #f9fafb !important; }
-            .text-gray-800 { color: #f3f4f6 !important; }
-            .text-gray-700 { color: #d1d5db !important; }
-            .text-gray-600 { color: #9ca3af !important; }
-            .text-gray-500 { color: #6b7280 !important; }
-            .text-gray-400 { color: #9ca3af !important; }
-            .text-gray-200 { color: #e5e7eb !important; }
-            .text-blue-900 { color: #ffffff !important; }
-            .text-blue-100 { color: #ffffff !important; }
-            .border-gray-200 { border-color: #374151 !important; }
-            .border-gray-300 { border-color: #374151 !important; }
-            .border-gray-600 { border-color: #4b5563 !important; }
-            .border-blue-200 { border-color: #1e40af !important; }
-            .border-blue-700 { border-color: #1e40af !important; }
-            .hover\\:bg-gray-100:hover { background-color: #374151 !important; }
-            .hover\\:bg-gray-200:hover { background-color: #374151 !important; }
-        }
+
         
         /* Layout utilities */
         .w-full { width: 100%; }
@@ -109,23 +250,23 @@
         .mt-4 { margin-top: 1rem; }
         .mb-4 { margin-bottom: 1rem; }
         
-        /* Colors */
-        .bg-white { background-color: #ffffff; }
-        .bg-gray-100 { background-color: #f3f4f6; }
-        .bg-gray-800 { background-color: #1f2937; }
-        .bg-blue-50 { background-color: #eff6ff; }
-        .bg-blue-500 { background-color: #3b82f6; }
-        .bg-blue-600 { background-color: #2563eb; }
-        .bg-blue-900 { background-color: #1e3a8a; }
-        .bg-black { background-color: #000000; }
-        .text-white { color: #ffffff; }
-        .text-blue-100 { color: #dbeafe; }
-        .text-blue-900 { color: #1e3a8a; }
-        .text-gray-500 { color: #6b7280; }
-        .text-gray-600 { color: #4b5563; }
-        .text-gray-700 { color: #374151; }
-        .text-gray-800 { color: #1f2937; }
-        .text-gray-900 { color: #111827; }
+        /* Colors using CSS custom properties */
+        .bg-white { background-color: var(--bg-secondary); }
+        .bg-gray-100 { background-color: var(--bg-primary); }
+        .bg-gray-800 { background-color: var(--bg-accent); }
+        .bg-blue-50 { background-color: var(--word-chip-bg); }
+        .bg-blue-500 { background: var(--tile-bg); }
+        .bg-blue-600 { background: var(--button-primary); }
+        .bg-blue-900 { background-color: var(--word-chip-bg); }
+        .bg-black { background-color: rgba(0, 0, 0, 0.5); }
+        .text-white { color: var(--text-accent); }
+        .text-blue-100 { color: var(--word-chip-text); }
+        .text-blue-900 { color: var(--word-chip-text); }
+        .text-gray-500 { color: var(--text-secondary); }
+        .text-gray-600 { color: var(--text-secondary); }
+        .text-gray-700 { color: var(--text-primary); }
+        .text-gray-800 { color: var(--text-primary); }
+        .text-gray-900 { color: var(--text-primary); }
         .text-red-500 { color: #ef4444; }
         .text-lg { font-size: 1.125rem; }
         .text-xl { font-size: 1.25rem; }
@@ -134,17 +275,17 @@
         .font-medium { font-weight: 500; }
         
         /* Placeholder colors */
-        .placeholder-gray-500::placeholder { color: #6b7280; }
-        .placeholder-gray-400::placeholder { color: #9ca3af; }
+        .placeholder-gray-500::placeholder { color: var(--text-secondary); }
+        .placeholder-gray-400::placeholder { color: var(--text-secondary); }
         
         /* Borders and shadows */
         .border { border-width: 1px; }
         .border-2 { border-width: 2px; }
         .border-transparent { border-color: transparent; }
-        .border-gray-200 { border-color: #e5e7eb; }
-        .border-gray-600 { border-color: #4b5563; }
-        .border-blue-200 { border-color: #c3ddfd; }
-        .border-blue-700 { border-color: #1d4ed8; }
+        .border-gray-200 { border-color: var(--border-color); }
+        .border-gray-600 { border-color: var(--border-color); }
+        .border-blue-200 { border-color: var(--word-chip-border); }
+        .border-blue-700 { border-color: var(--word-chip-border); }
         .rounded-md { border-radius: 0.375rem; }
         .rounded-lg { border-radius: 0.5rem; }
         .rounded-xl { border-radius: 0.75rem; }
@@ -156,20 +297,30 @@
         .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
         
         /* Interactive states */
-        .hover\\:bg-blue-700:hover { background-color: #1d4ed8; }
-        .hover\\:bg-gray-100:hover { background-color: #f3f4f6; }
-        .hover\\:bg-gray-200:hover { background-color: #e5e7eb; }
-        .hover\\:text-gray-800:hover { color: #1f2937; }
+        .hover\\:bg-blue-700:hover { background: var(--button-primary-hover); }
+        .hover\\:bg-gray-100:hover { background-color: var(--button-secondary-hover); }
+        .hover\\:bg-gray-200:hover { background-color: var(--button-secondary-hover); }
+        .hover\\:text-gray-800:hover { color: var(--text-primary); }
         .hover\\:scale-105:hover { transform: scale(1.05); }
         .hover\\:scale-110:hover { transform: scale(1.1); }
         .hover\\:shadow-xl:hover { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
         .hover\\:shadow-2xl:hover { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
         .active\\:scale-95:active { transform: scale(0.95); }
-        .focus\\:ring-4:focus { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3); }
-        .focus\\:border-blue-500:focus { border-color: #3b82f6; }
+        .focus\\:ring-4:focus { box-shadow: 0 0 0 4px var(--tile-shadow); }
+        .focus\\:border-blue-500:focus { border-color: var(--border-focus); }
         .outline-none { outline: none; }
         .cursor-pointer { cursor: pointer; }
         .select-none { user-select: none; }
+        
+        /* Theme selector specific styles */
+        .bg-orange-300 { background-color: #fdba74; }
+        .bg-orange-500 { background-color: #f97316; }
+        .bg-cyan-300 { background-color: #67e8f9; }
+        .bg-cyan-500 { background-color: #06b6d4; }
+        .bg-green-300 { background-color: #86efac; }
+        .bg-green-500 { background-color: #22c55e; }
+        .hover\\:bg-gray-50:hover { background-color: #f9fafb; }
+        .min-w-48 { min-width: 12rem; }
         
         /* Display utilities */
         .hidden { display: none; }
@@ -182,10 +333,21 @@
         /* Custom styles */
         .letter-tile {
             transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            background: var(--tile-bg) !important;
+            color: var(--tile-text) !important;
+            box-shadow: 0 4px 12px var(--tile-shadow), 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .letter-tile:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 20px var(--tile-shadow), 0 4px 8px rgba(0, 0, 0, 0.15);
         }
         
         .letter-tile.dimmed {
             opacity: 0.3;
+            transform: scale(0.9);
         }
         
         #appContainer {
@@ -232,17 +394,74 @@
         .transform { transform: translateZ(0); }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+<body class="bg-gray-100 text-gray-900">
+
+    <!-- Theme Selector -->
+    <div id="themeSelector" class="fixed top-4 right-4 z-50">
+        <button id="themeMenuButton" class="bg-white text-gray-700 border border-gray-200 rounded-lg p-2 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
+            </svg>
+        </button>
+        
+        <div id="themeMenu" class="hidden absolute top-12 right-0 bg-white border border-gray-200 rounded-lg shadow-xl min-w-48 overflow-hidden">
+            <div class="p-2 border-b border-gray-100">
+                <span class="text-sm font-medium text-gray-700">Choose Theme</span>
+            </div>
+            <div class="theme-option p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100" data-theme="classic">
+                <div class="flex items-center gap-3">
+                    <div class="flex gap-1">
+                        <div class="w-3 h-3 rounded-full bg-gray-300"></div>
+                        <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                    </div>
+                    <span class="text-sm font-medium">Classic</span>
+                </div>
+            </div>
+            <div class="theme-option p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100" data-theme="sunset">
+                <div class="flex items-center gap-3">
+                    <div class="flex gap-1">
+                        <div class="w-3 h-3 rounded-full bg-orange-300"></div>
+                        <div class="w-3 h-3 rounded-full bg-orange-500"></div>
+                    </div>
+                    <span class="text-sm font-medium">Warm Sunset</span>
+                </div>
+            </div>
+            <div class="theme-option p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100" data-theme="ocean">
+                <div class="flex items-center gap-3">
+                    <div class="flex gap-1">
+                        <div class="w-3 h-3 rounded-full bg-cyan-300"></div>
+                        <div class="w-3 h-3 rounded-full bg-cyan-500"></div>
+                    </div>
+                    <span class="text-sm font-medium">Ocean Depths</span>
+                </div>
+            </div>
+            <div class="theme-option p-3 hover:bg-gray-50 cursor-pointer" data-theme="forest">
+                <div class="flex items-center gap-3">
+                    <div class="flex gap-1">
+                        <div class="w-3 h-3 rounded-full bg-green-300"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <span class="text-sm font-medium">Forest Nature</span>
+                </div>
+            </div>
+            <div class="p-2 border-t border-gray-100">
+                <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                    <input type="checkbox" id="darkModeToggle" class="rounded">
+                    <span>Dark Mode</span>
+                </label>
+            </div>
+        </div>
+    </div>
 
     <div id="appContainer" class="w-full">
         <div class="flex flex-col p-4 md:p-6 h-full">
         
-            <div id="letterContainer" class="relative w-full flex-grow bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+            <div id="letterContainer" class="relative w-full flex-grow bg-white rounded-2xl shadow-lg overflow-hidden">
                 <!-- Letters will be dynamically inserted here -->
             </div>
 
             <div class="flex items-center gap-3 mt-4">
-                <input type="text" id="letterInput" placeholder="Type letters here..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="flex-grow w-full px-5 py-3 text-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-2 border-transparent rounded-xl shadow-lg focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition duration-300 placeholder-gray-500 dark:placeholder-gray-400">
+                <input type="text" id="letterInput" placeholder="Type letters here..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="flex-grow w-full px-5 py-3 text-lg text-gray-900 bg-white border-2 border-transparent rounded-xl shadow-lg focus:ring-4 focus:border-blue-500 outline-none transition duration-300 placeholder-gray-500">
                 
                 <button id="findAnagramsButton" class="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -250,7 +469,7 @@
                     </svg>
                 </button>
 
-                <button id="repositionButton" class="flex-shrink-0 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 font-bold p-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95">
+                <button id="repositionButton" class="flex-shrink-0 bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 font-bold p-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M20 4h-5v5M4 20h5v-5" />
                     </svg>
@@ -261,10 +480,10 @@
 
     <!-- Anagram Results Modal -->
     <div id="resultsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-end z-50">
-        <div class="modal-content w-full bg-gray-100 dark:bg-gray-900 rounded-t-2xl shadow-lg p-4 max-h-[75vh] flex flex-col">
+        <div class="modal-content w-full bg-gray-100 rounded-t-2xl shadow-lg p-4 max-h-[75vh] flex flex-col">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white">✨ Possible Words</h2>
-                <button id="closeModalButton" class="text-gray-500 hover:text-gray-800 dark:hover:text-white">
+                <h2 class="text-xl font-bold text-gray-800">✨ Possible Words</h2>
+                <button id="closeModalButton" class="text-gray-500 hover:text-gray-800">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -281,6 +500,103 @@
 
     <script src="words.js"></script>
     <script>
+        // Theme System
+        class ThemeManager {
+            constructor() {
+                this.currentTheme = localStorage.getItem('anagram-theme') || 'classic';
+                this.isDarkMode = localStorage.getItem('anagram-dark-mode') === 'true' || false;
+                this.init();
+            }
+            
+            init() {
+                this.applyTheme();
+                this.setupEventListeners();
+                this.updateUI();
+            }
+            
+            applyTheme() {
+                const body = document.body;
+                
+                // Remove all theme classes
+                body.classList.remove('theme-sunset', 'theme-sunset-dark', 'theme-ocean', 'theme-ocean-dark', 'theme-forest', 'theme-forest-dark');
+                
+                // Apply current theme
+                if (this.currentTheme !== 'classic') {
+                    const themeClass = this.isDarkMode ? `theme-${this.currentTheme}-dark` : `theme-${this.currentTheme}`;
+                    body.classList.add(themeClass);
+                }
+            }
+            
+            setTheme(theme) {
+                this.currentTheme = theme;
+                localStorage.setItem('anagram-theme', theme);
+                this.applyTheme();
+                this.updateUI();
+            }
+            
+            toggleDarkMode() {
+                this.isDarkMode = !this.isDarkMode;
+                localStorage.setItem('anagram-dark-mode', this.isDarkMode.toString());
+                this.applyTheme();
+                this.updateUI();
+            }
+            
+            updateUI() {
+                // Update dark mode toggle
+                const darkModeToggle = document.getElementById('darkModeToggle');
+                if (darkModeToggle) {
+                    darkModeToggle.checked = this.isDarkMode;
+                }
+                
+                // Update theme options selection
+                document.querySelectorAll('.theme-option').forEach(option => {
+                    option.classList.remove('bg-blue-50', 'border-blue-200');
+                    if (option.dataset.theme === this.currentTheme) {
+                        option.classList.add('bg-blue-50', 'border', 'border-blue-200');
+                    }
+                });
+            }
+            
+            setupEventListeners() {
+                // Theme menu toggle
+                const themeMenuButton = document.getElementById('themeMenuButton');
+                const themeMenu = document.getElementById('themeMenu');
+                
+                themeMenuButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    themeMenu.classList.toggle('hidden');
+                });
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', () => {
+                    themeMenu.classList.add('hidden');
+                });
+                
+                // Prevent menu from closing when clicking inside
+                themeMenu.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+                
+                // Theme options
+                document.querySelectorAll('.theme-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        this.setTheme(option.dataset.theme);
+                        themeMenu.classList.add('hidden');
+                    });
+                });
+                
+                // Dark mode toggle
+                const darkModeToggle = document.getElementById('darkModeToggle');
+                darkModeToggle.addEventListener('change', () => {
+                    this.toggleDarkMode();
+                });
+            }
+        }
+        
+        // Initialize theme manager
+        const themeManager = new ThemeManager();
+        
+        // Existing anagram solver code
         const letterInput = document.getElementById('letterInput');
         const repositionButton = document.getElementById('repositionButton');
         const letterContainer = document.getElementById('letterContainer');
