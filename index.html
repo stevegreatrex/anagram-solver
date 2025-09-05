@@ -295,14 +295,70 @@
 
         const calculateTileSize = (letterCount, containerWidth, containerHeight) => {
             if (letterCount === 0) return { tileSize: 60, fontSize: 36 };
+            
+            // For fewer letters, make tiles significantly larger
             const containerArea = containerWidth * containerHeight;
-            const safeAreaPerTile = (containerArea / letterCount) * 0.7; 
+            let safeAreaPerTile = (containerArea / letterCount) * 0.8; 
+            
+            // Give bonus size for fewer letters
+            if (letterCount <= 3) {
+                safeAreaPerTile *= 2.5; // Much larger tiles for very few letters
+            } else if (letterCount <= 7) {
+                safeAreaPerTile *= 1.8; // Larger tiles for few letters
+            } else if (letterCount <= 10) {
+                safeAreaPerTile *= 1.3; // Moderately larger tiles
+            }
+            
             let tileSize = Math.sqrt(safeAreaPerTile);
             const minSize = 24;
-            const maxSize = 90;
+            const maxSize = 150; // Increased max size for better appearance with few letters
             tileSize = Math.max(minSize, Math.min(tileSize, maxSize));
             const fontSize = tileSize * 0.6;
             return { tileSize, fontSize };
+        };
+
+        const calculateCircularPositions = (letterCount, containerWidth, containerHeight, tileSize) => {
+            const centerX = containerWidth / 2;
+            const centerY = containerHeight / 2;
+            
+            // Calculate radius based on number of letters and container size
+            // Leave margin to ensure tiles don't go outside bounds
+            const margin = tileSize;
+            const maxRadius = Math.min(
+                (containerWidth - 2 * margin) / 2,
+                (containerHeight - 2 * margin) / 2
+            );
+            
+            // For very few letters, use a smaller radius to keep them closer together
+            let radius;
+            if (letterCount <= 3) {
+                radius = Math.min(maxRadius * 0.3, 80);
+            } else if (letterCount <= 7) {
+                radius = Math.min(maxRadius * 0.5, 120);
+            } else {
+                radius = maxRadius * 0.8;
+            }
+            
+            const positions = [];
+            
+            if (letterCount === 1) {
+                // Single letter in center
+                positions.push({
+                    x: centerX - tileSize / 2,
+                    y: centerY - tileSize / 2
+                });
+            } else {
+                // Multiple letters in circle
+                for (let i = 0; i < letterCount; i++) {
+                    const angle = (i * 2 * Math.PI) / letterCount - Math.PI / 2; // Start from top
+                    const x = centerX + radius * Math.cos(angle) - tileSize / 2;
+                    const y = centerY + radius * Math.sin(angle) - tileSize / 2;
+                    
+                    positions.push({ x, y });
+                }
+            }
+            
+            return positions;
         };
 
         const checkOverlap = (rect1, rect2) => {
@@ -322,79 +378,31 @@
             const containerWidth = letterContainer.offsetWidth;
             const containerHeight = letterContainer.offsetHeight;
             
-            let placementSuccess = false;
             let { tileSize, fontSize } = calculateTileSize(letters.length, containerWidth, containerHeight);
-            const minTileSize = 10;
+            
+            // Calculate circular positions
+            const positions = calculateCircularPositions(letters.length, containerWidth, containerHeight, tileSize);
+            
+            // Create and place tiles
+            letters.split('').forEach((char, index) => {
+                if (char === ' ') return;
+                
+                const letterTile = document.createElement('div');
+                letterTile.textContent = char.toUpperCase();
+                letterTile.className = 'letter-tile absolute flex items-center justify-center bg-blue-500 text-white rounded-lg shadow-lg font-semibold select-none cursor-pointer';
+                letterTile.style.width = `${tileSize}px`;
+                letterTile.style.height = `${tileSize}px`;
+                letterTile.style.fontSize = `${fontSize}px`;
+                letterTile.style.left = `${positions[index].x}px`;
+                letterTile.style.top = `${positions[index].y}px`;
 
-            while (!placementSuccess && tileSize >= minTileSize) {
-                placementSuccess = true;
-                const placedTiles = [];
-                const tileElements = [];
+                // Add click listener to toggle opacity
+                letterTile.addEventListener('click', () => {
+                    letterTile.classList.toggle('dimmed');
+                });
 
-                for (const char of letters) {
-                    if (char === ' ') continue;
-                    const letterTile = document.createElement('div');
-                    letterTile.textContent = char.toUpperCase();
-                    letterTile.className = 'letter-tile absolute flex items-center justify-center bg-blue-500 text-white rounded-lg shadow-lg font-semibold select-none cursor-pointer';
-                    letterTile.style.width = `${tileSize}px`;
-                    letterTile.style.height = `${tileSize}px`;
-                    letterTile.style.fontSize = `${fontSize}px`;
-
-                    // --- NEW: Add click listener to toggle opacity ---
-                    letterTile.addEventListener('click', () => {
-                        letterTile.classList.toggle('dimmed');
-                    });
-
-                    tileElements.push(letterTile);
-                }
-
-                for (const letterTile of tileElements) {
-                    let positionIsValid = false;
-                    let attempts = 0;
-                    const maxAttempts = 200;
-
-                    while (!positionIsValid && attempts < maxAttempts) {
-                        attempts++;
-                        const randomX = Math.random() * (containerWidth - tileSize);
-                        const randomY = Math.random() * (containerHeight - tileSize);
-                        const newTileRect = { x: randomX, y: randomY, width: tileSize, height: tileSize };
-                        
-                        let hasOverlap = false;
-                        for (const placedRect of placedTiles) {
-                            if (checkOverlap(newTileRect, placedRect)) {
-                                hasOverlap = true;
-                                break;
-                            }
-                        }
-                        if (!hasOverlap) {
-                            positionIsValid = true;
-                            letterTile.dataset.x = randomX;
-                            letterTile.dataset.y = randomY;
-                            placedTiles.push(newTileRect);
-                        }
-                    }
-
-                    if (!positionIsValid) {
-                        placementSuccess = false;
-                        break; 
-                    }
-                }
-
-                if (!placementSuccess) {
-                    tileSize *= 0.95;
-                    fontSize = tileSize * 0.6;
-                } else {
-                    tileElements.forEach(tile => {
-                        tile.style.left = `${tile.dataset.x}px`;
-                        tile.style.top = `${tile.dataset.y}px`;
-                        letterContainer.appendChild(tile);
-                    });
-                }
-            }
-
-            if (!placementSuccess) {
-                console.error("Could not fit all letters on screen.");
-            }
+                letterContainer.appendChild(letterTile);
+            });
         };
 
         const handleInput = () => {
