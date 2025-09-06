@@ -293,37 +293,72 @@
 
         let currentLetters = '';
 
-        const calculateTileSize = (letterCount, containerWidth, containerHeight) => {
+        const calculateOptimalTileSize = (letterCount, containerWidth, containerHeight) => {
             if (letterCount === 0) return { tileSize: 60, fontSize: 36 };
             
-            // Improved mobile-first sizing approach
-            const containerArea = containerWidth * containerHeight;
-            let safeAreaPerTile = (containerArea / letterCount) * 0.4; // More conservative for mobile
+            const minSize = 24; // Absolute minimum for readability
+            const maxSize = 100; // Maximum size
+            const padding = 15; // Space between letters
             
-            // Adjust sizing based on letter count for better mobile readability
-            if (letterCount <= 3) {
-                safeAreaPerTile *= 3.0; // Larger tiles for few letters
-            } else if (letterCount <= 7) {
-                safeAreaPerTile *= 1.8; // Medium size
-            } else if (letterCount <= 12) {
-                safeAreaPerTile *= 1.2; // Smaller but readable
-            } else {
-                // For many letters, prioritize readability over size
-                safeAreaPerTile *= 0.9;
+            // Start with an initial estimate based on container area
+            const containerArea = containerWidth * containerHeight;
+            let initialTileSize = Math.sqrt((containerArea / letterCount) * 0.5);
+            initialTileSize = Math.max(minSize, Math.min(initialTileSize, maxSize));
+            
+            // Binary search to find the largest tile size that fits without overlaps
+            let low = minSize;
+            let high = Math.min(initialTileSize, maxSize);
+            let bestTileSize = minSize;
+            
+            // Try different tile sizes to find the largest one that works
+            for (let attempts = 0; attempts < 10; attempts++) {
+                const testTileSize = Math.floor((low + high) / 2);
+                
+                if (canFitWithoutOverlaps(letterCount, containerWidth, containerHeight, testTileSize, padding)) {
+                    bestTileSize = testTileSize;
+                    low = testTileSize + 1;
+                } else {
+                    high = testTileSize - 1;
+                }
+                
+                if (low > high) break;
             }
             
-            let tileSize = Math.sqrt(safeAreaPerTile);
-            const minSize = 32; // Increased minimum size for mobile readability
-            const maxSize = 100; // Reduced max size to ensure more letters fit
-            tileSize = Math.max(minSize, Math.min(tileSize, maxSize));
-            const fontSize = tileSize * 0.6;
-            return { tileSize, fontSize };
+            const fontSize = bestTileSize * 0.6;
+            return { tileSize: bestTileSize, fontSize };
         };
 
-        const calculateHybridPositions = (letterCount, containerWidth, containerHeight, tileSize) => {
+        const canFitWithoutOverlaps = (letterCount, containerWidth, containerHeight, tileSize, padding) => {
+            // Test if we can position all letters without overlaps using our positioning algorithm
+            const positions = calculateHybridPositions(letterCount, containerWidth, containerHeight, tileSize, padding, true);
+            
+            // Check if any positions overlap
+            for (let i = 0; i < positions.length; i++) {
+                for (let j = i + 1; j < positions.length; j++) {
+                    const rect1 = { 
+                        x: positions[i].x, 
+                        y: positions[i].y, 
+                        width: tileSize, 
+                        height: tileSize 
+                    };
+                    const rect2 = { 
+                        x: positions[j].x, 
+                        y: positions[j].y, 
+                        width: tileSize, 
+                        height: tileSize 
+                    };
+                    
+                    if (checkOverlap(rect1, rect2, padding)) {
+                        return false; // Found overlap
+                    }
+                }
+            }
+            return true; // No overlaps found
+        };
+
+        const calculateHybridPositions = (letterCount, containerWidth, containerHeight, tileSize, padding = 15, isTestRun = false) => {
             const centerX = containerWidth / 2;
             const centerY = containerHeight / 2;
-            const padding = 15; // Increased padding for better mobile readability
             
             // Calculate maximum radius available in container
             const margin = tileSize + padding;
@@ -348,7 +383,7 @@
             let radius = 0;
             
             // Find maximum number of letters that can fit in circle without overlap
-            for (let testCount = Math.min(letterCount, 12); testCount >= 2; testCount--) {
+            for (let testCount = Math.min(letterCount, 15); testCount >= 2; testCount--) {
                 const angleStep = (2 * Math.PI) / testCount;
                 // Calculate minimum radius needed for no overlap
                 // Distance between adjacent letter centers should be >= tileSize + padding
@@ -362,7 +397,9 @@
                 }
             }
             
-            console.log(`Letters positioned: ${circularLettersCount} in circle, ${letterCount - circularLettersCount} random`);
+            if (!isTestRun) {
+                console.log(`Letters positioned: ${circularLettersCount} in circle, ${letterCount - circularLettersCount} random`);
+            }
             
             // Place letters in circle
             for (let i = 0; i < circularLettersCount; i++) {
@@ -380,7 +417,7 @@
                 let validPosition = false;
                 let x, y;
                 
-                while (!validPosition && attempts < 100) {
+                while (!validPosition && attempts < 200) {
                     // Random position within container bounds
                     x = Math.random() * (containerWidth - tileSize);
                     y = Math.random() * (containerHeight - tileSize);
@@ -397,7 +434,7 @@
                             height: tileSize 
                         };
                         
-                        if (checkOverlap(newRect, existingRect)) {
+                        if (checkOverlap(newRect, existingRect, padding)) {
                             validPosition = false;
                             break;
                         }
@@ -406,8 +443,13 @@
                     attempts++;
                 }
                 
-                // If we couldn't find a non-overlapping position, place it anyway
-                if (attempts >= 100) {
+                // If we couldn't find a non-overlapping position in test run, return failure
+                if (isTestRun && attempts >= 200) {
+                    return null; // Indicates failure to place without overlaps
+                }
+                
+                // For actual placement, if we couldn't find a position, place it anyway but this should be rare now
+                if (attempts >= 200) {
                     x = Math.random() * (containerWidth - tileSize);
                     y = Math.random() * (containerHeight - tileSize);
                 }
@@ -418,8 +460,7 @@
             return positions;
         };
 
-        const checkOverlap = (rect1, rect2) => {
-            const padding = 15; // Increased padding for better mobile spacing
+        const checkOverlap = (rect1, rect2, padding = 15) => {
             return (
                 rect1.x < rect2.x + rect2.width + padding &&
                 rect1.x + rect1.width + padding > rect2.x &&
@@ -435,9 +476,10 @@
             const containerWidth = letterContainer.offsetWidth;
             const containerHeight = letterContainer.offsetHeight;
             
-            let { tileSize, fontSize } = calculateTileSize(letters.length, containerWidth, containerHeight);
+            // Calculate optimal tile size that prevents overlaps
+            let { tileSize, fontSize } = calculateOptimalTileSize(letters.length, containerWidth, containerHeight);
             
-            // Calculate hybrid positions (circle + random)
+            // Calculate hybrid positions (circle + random) with the optimal tile size
             const positions = calculateHybridPositions(letters.length, containerWidth, containerHeight, tileSize);
             
             // Create and place tiles
