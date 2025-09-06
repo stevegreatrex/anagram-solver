@@ -219,6 +219,11 @@
             100% { transform: rotate(360deg); }
         }
         
+        @keyframes slideDown {
+            0% { transform: translateY(-100%); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        
         /* Additional responsive utilities */
         .max-h-50vh { max-height: 50vh; }
         .flex-wrap { flex-wrap: wrap; }
@@ -669,15 +674,19 @@
                 installButton = document.createElement('button');
                 installButton.id = 'installButton';
                 installButton.innerHTML = '📱 Install App';
-                installButton.className = 'install-button bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition-all duration-300';
+                installButton.className = 'install-button bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-300';
                 installButton.style.cssText = `
                     position: fixed;
-                    bottom: 20px;
+                    top: 20px;
                     right: 20px;
                     z-index: 1000;
                     border: none;
                     cursor: pointer;
-                    font-size: 14px;
+                    font-size: 18px;
+                    min-height: 48px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 `;
                 
                 installButton.addEventListener('click', async () => {
@@ -706,6 +715,68 @@
             }
         }
 
+        function showUpdateNotification() {
+            // Create update notification if it doesn't exist
+            let updateNotification = document.getElementById('updateNotification');
+            if (!updateNotification) {
+                updateNotification = document.createElement('div');
+                updateNotification.id = 'updateNotification';
+                updateNotification.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 18px;">🔄</span>
+                            <span style="font-weight: 600;">App Updated!</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button id="updateRefreshBtn" style="background: #22c55e; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Refresh</button>
+                            <button id="updateDismissBtn" style="background: #6b7280; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Later</button>
+                        </div>
+                    </div>
+                `;
+                updateNotification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    left: 20px;
+                    background: #ffffff;
+                    border: 2px solid #22c55e;
+                    border-radius: 12px;
+                    padding: 16px;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+                    z-index: 1001;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    color: #1f2937;
+                    animation: slideDown 0.3s ease-out;
+                `;
+                
+                // Apply dark mode styles if needed
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    updateNotification.style.background = '#1f2937';
+                    updateNotification.style.color = '#f9fafb';
+                    updateNotification.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.3)';
+                }
+                
+                // Add click handlers
+                updateNotification.querySelector('#updateRefreshBtn').addEventListener('click', () => {
+                    window.location.reload();
+                });
+                
+                updateNotification.querySelector('#updateDismissBtn').addEventListener('click', () => {
+                    hideUpdateNotification();
+                });
+                
+                document.body.appendChild(updateNotification);
+            }
+            updateNotification.style.display = 'block';
+        }
+
+        function hideUpdateNotification() {
+            const updateNotification = document.getElementById('updateNotification');
+            if (updateNotification) {
+                updateNotification.style.display = 'none';
+            }
+        }
+
         // Register service worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', async () => {
@@ -721,10 +792,8 @@
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                                 console.log('New service worker installed, refreshing...');
-                                // Optionally show a notification about the update
-                                if (confirm('App updated! Refresh to get the latest version?')) {
-                                    window.location.reload();
-                                }
+                                // Show custom update notification
+                                showUpdateNotification();
                             }
                         });
                     });
