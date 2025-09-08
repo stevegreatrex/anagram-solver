@@ -396,141 +396,191 @@
         };
 
         const calculateHybridPositions = (letterCount, containerWidth, containerHeight, tileSize, padding = 15, isTestRun = false) => {
-            const { circleCap } = getSpacingConfig();
             const centerX = containerWidth / 2;
             const centerY = containerHeight / 2;
-            
-            // Calculate maximum radius available in container
             const margin = (tileSize / 2) + padding;
-            const maxRx = (containerWidth - 2 * margin) / 2;
-            const maxRy = (containerHeight - 2 * margin) / 2;
-            const useEllipse = maxRy > maxRx * 1.1; // prefer ellipse in portrait/tall view
-            const maxRadius = Math.min(maxRx, maxRy);
-            
-            const positions = [];
-            
-            if (letterCount === 1) {
-                // Single letter in center
-                positions.push({
-                    x: centerX - tileSize / 2,
-                    y: centerY - tileSize / 2
-                });
-                return positions;
-            }
-            
-            // Try to fit letters in an ellipse (or circle) without overlap
-            let circularLettersCount = 0;
-            let radius = 0;
-            let rx = maxRx;
-            let ry = useEllipse ? maxRy : maxRadius;
-            
-            // Find maximum number of letters that can fit around perimeter without overlap
-            for (let testCount = Math.min(letterCount, circleCap); testCount >= 2; testCount--) {
-                const angleStep = (2 * Math.PI) / testCount;
-                // Minimum spacing between adjacent letter centers
-                const chordLength = tileSize + padding;
 
-                if (!useEllipse) {
-                    // Circle case (legacy)
-                    const testRadius = chordLength / (2 * Math.sin(angleStep / 2));
-                    if (testRadius <= maxRadius) {
-                        circularLettersCount = testCount;
-                        radius = testRadius;
-                        rx = testRadius;
-                        ry = testRadius;
+            const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+            const toPixel = (nx, ny) => ({
+                x: clamp(nx * containerWidth - tileSize / 2, margin, containerWidth - margin - tileSize / 2),
+                y: clamp(ny * containerHeight - tileSize / 2, margin, containerHeight - margin - tileSize / 2)
+            });
+
+            const buildFromGrid = (gridPoints) => gridPoints.map(p => ({
+                x: p.x - tileSize / 2,
+                y: p.y - tileSize / 2
+            }));
+
+            // Predefined card-like pip layouts for 1..10 using normalized positions
+            const getPipLayout = (n) => {
+                const left = margin;
+                const right = containerWidth - margin;
+                const centerXpx = centerX;
+                const top = margin;
+                const bottom = containerHeight - margin;
+                const midTop = top + (bottom - top) * 0.33;
+                const midBottom = top + (bottom - top) * 0.67;
+                const rows5 = [top, midTop, centerY, midBottom, bottom];
+                const rows3 = [top, centerY, bottom];
+                const colLeft = left;
+                const colRight = right;
+
+                const pts = [];
+                switch (n) {
+                    case 1:
+                        pts.push({ x: centerXpx, y: centerY });
                         break;
-                    }
-                } else {
-                    // Ellipse case: try with max available rx, ry and verify spacing by overlap checks
-                    let tempPositions = [];
-                    for (let i = 0; i < testCount; i++) {
-                        const angle = (i * 2 * Math.PI) / testCount - Math.PI / 2; // start top
-                        const x = centerX + rx * Math.cos(angle) - tileSize / 2;
-                        const y = centerY + ry * Math.sin(angle) - tileSize / 2;
-                        tempPositions.push({ x, y });
-                    }
-                    // Check for overlaps among perimeter positions
-                    let ok = true;
-                    for (let i = 0; i < tempPositions.length && ok; i++) {
-                        for (let j = i + 1; j < tempPositions.length; j++) {
-                            const r1 = { x: tempPositions[i].x, y: tempPositions[i].y, width: tileSize, height: tileSize };
-                            const r2 = { x: tempPositions[j].x, y: tempPositions[j].y, width: tileSize, height: tileSize };
-                            if (checkOverlap(r1, r2, padding)) { ok = false; break; }
-                        }
-                    }
-                    if (ok) {
-                        circularLettersCount = testCount;
-                        positions.push(...tempPositions);
+                    case 2:
+                        pts.push({ x: centerXpx, y: top }, { x: centerXpx, y: bottom });
                         break;
-                    }
+                    case 3:
+                        pts.push({ x: centerXpx, y: top }, { x: centerXpx, y: centerY }, { x: centerXpx, y: bottom });
+                        break;
+                    case 4:
+                        pts.push({ x: colLeft, y: top }, { x: colRight, y: top }, { x: colLeft, y: bottom }, { x: colRight, y: bottom });
+                        break;
+                    case 5:
+                        pts.push({ x: colLeft, y: top }, { x: colRight, y: top }, { x: centerXpx, y: centerY }, { x: colLeft, y: bottom }, { x: colRight, y: bottom });
+                        break;
+                    case 6:
+                        rows3.forEach(y => { pts.push({ x: colLeft, y }); pts.push({ x: colRight, y }); });
+                        break;
+                    case 7:
+                        rows3.forEach(y => { pts.push({ x: colLeft, y }); pts.push({ x: colRight, y }); });
+                        pts.push({ x: centerXpx, y: centerY });
+                        break;
+                    case 8:
+                        rows3.forEach(y => { pts.push({ x: colLeft, y }); pts.push({ x: colRight, y }); });
+                        pts.push({ x: centerXpx, y: midTop }, { x: centerXpx, y: midBottom });
+                        break;
+                    case 9:
+                        rows5.forEach(y => { pts.push({ x: colLeft, y }); pts.push({ x: colRight, y }); });
+                        pts.push({ x: centerXpx, y: centerY });
+                        break;
+                    case 10:
+                        rows5.forEach(y => { pts.push({ x: colLeft, y }); pts.push({ x: colRight, y }); });
+                        pts.push({ x: centerXpx, y: midTop }, { x: centerXpx, y: midBottom });
+                        break;
+                    default:
+                        return null;
                 }
-            }
-            
-            if (!isTestRun) {
-                console.log(`Letters positioned: ${circularLettersCount} on ${useEllipse ? 'ellipse' : 'circle'}, ${letterCount - circularLettersCount} random`);
-            }
-            
-            // Place letters on perimeter if not already placed (circle case)
-            if (!useEllipse) {
-                for (let i = 0; i < circularLettersCount; i++) {
-                    const angle = (i * 2 * Math.PI) / circularLettersCount - Math.PI / 2; // Start from top
-                    const x = centerX + radius * Math.cos(angle) - tileSize / 2;
-                    const y = centerY + radius * Math.sin(angle) - tileSize / 2;
-                    positions.push({ x, y });
-                }
-            }
-            
-            // Place remaining letters randomly around the container
-            const remainingLetters = letterCount - circularLettersCount;
-            for (let i = 0; i < remainingLetters; i++) {
-                let attempts = 0;
-                let validPosition = false;
-                let x, y;
-                
-                while (!validPosition && attempts < 200) {
-                    // Random position within container bounds
-                    // Bias random placement toward center area to better use space
-                    const biasX = (Math.random() * 0.7 + 0.15); // 15%-85%
-                    const biasY = (Math.random() * 0.7 + 0.15);
-                    x = biasX * (containerWidth - tileSize);
-                    y = biasY * (containerHeight - tileSize);
-                    
-                    // Check if position overlaps with existing letters
-                    const newRect = { x, y, width: tileSize, height: tileSize };
-                    validPosition = true;
-                    
-                    for (const pos of positions) {
-                        const existingRect = { 
-                            x: pos.x, 
-                            y: pos.y, 
-                            width: tileSize, 
-                            height: tileSize 
+                return buildFromGrid(pts);
+            };
+
+            const jitterPositions = (basePositions) => {
+                const maxJitterX = Math.min(14, Math.max(4, Math.floor(tileSize * 0.10)));
+                const maxJitterY = Math.min(8, Math.max(2, Math.floor(tileSize * 0.05)));
+                const jittered = [];
+                for (let i = 0; i < basePositions.length; i++) {
+                    const original = basePositions[i];
+                    let placed = false;
+                    for (let attempt = 0; attempt < 20 && !placed; attempt++) {
+                        const dx = (Math.random() * 2 - 1) * maxJitterX;
+                        const dy = (Math.random() * 2 - 1) * maxJitterY;
+                        const candidate = {
+                            x: clamp(original.x + dx, margin, containerWidth - margin - tileSize),
+                            y: clamp(original.y + dy, margin, containerHeight - margin - tileSize)
                         };
-                        
-                        if (checkOverlap(newRect, existingRect, padding)) {
-                            validPosition = false;
-                            break;
+                        // Use full padding to avoid any overlaps
+                        const softPadding = padding;
+                        let ok = true;
+                        for (const p of jittered) {
+                            if (checkOverlap({ x: candidate.x, y: candidate.y, width: tileSize, height: tileSize }, { x: p.x, y: p.y, width: tileSize, height: tileSize }, softPadding)) {
+                                ok = false; break;
+                            }
                         }
+                        if (ok) { jittered.push(candidate); placed = true; }
                     }
-                    
-                    attempts++;
+                    if (!placed) {
+                        // Fallback to original
+                        jittered.push({
+                            x: clamp(original.x, margin, containerWidth - margin - tileSize),
+                            y: clamp(original.y, margin, containerHeight - margin - tileSize)
+                        });
+                    }
                 }
-                
-                // If we couldn't find a non-overlapping position in test run, return failure
-                if (isTestRun && attempts >= 200) {
-                    return null; // Indicates failure to place without overlaps
-                }
-                
-                // For actual placement, if we couldn't find a position, place it anyway but this should be rare now
-                if (attempts >= 200) {
-                    x = Math.random() * (containerWidth - tileSize);
-                    y = Math.random() * (containerHeight - tileSize);
-                }
-                
-                positions.push({ x, y });
+                return jittered;
+            };
+
+            // Try card pip layout for 1..10
+            if (letterCount <= 10) {
+                const pip = getPipLayout(letterCount);
+                if (pip) return isTestRun ? pip : jitterPositions(pip);
             }
-            
-            return positions;
+
+            // General symmetric centered grid for larger counts
+            const availableWidth = containerWidth - 2 * margin;
+            const availableHeight = containerHeight - 2 * margin;
+            const aspect = availableWidth / availableHeight;
+            let rows = Math.round(Math.sqrt(letterCount / aspect));
+            rows = clamp(rows, 2, 6);
+
+            // Distribute counts per row (center rows first for extra)
+            const base = Math.floor(letterCount / rows);
+            let remainder = letterCount % rows;
+            const perRow = new Array(rows).fill(base);
+            let mid = Math.floor(rows / 2);
+            let spread = 0;
+            while (remainder > 0) {
+                const up = mid - spread;
+                const down = mid + spread + (rows % 2 === 0 ? 1 : 0);
+                if (up >= 0 && remainder > 0) { perRow[up]++; remainder--; }
+                if (down < rows && remainder > 0) { perRow[down]++; remainder--; }
+                spread++;
+            }
+
+            // Compute vertical spacing centered with padding if possible
+            const desiredVGap = padding;
+            const minTotalHeight = rows * tileSize + (rows - 1) * 0; // worst case, no vertical gap
+            const idealTotalHeight = rows * tileSize + (rows - 1) * desiredVGap;
+            let vGap;
+            let startY;
+            if (idealTotalHeight <= availableHeight) {
+                vGap = desiredVGap;
+                startY = centerY - idealTotalHeight / 2;
+            } else {
+                // shrink gap to fit
+                vGap = rows > 1 ? (availableHeight - rows * tileSize) / (rows - 1) : 0;
+                startY = margin;
+            }
+
+            const positions = [];
+            for (let r = 0; r < rows; r++) {
+                const cols = perRow[r];
+                const rowY = startY + r * (tileSize + vGap);
+                // Horizontal spacing: try desired padding, shrink if needed to keep on-screen
+                let hGap = cols > 1 ? padding : 0;
+                let rowWidth = cols * tileSize + (cols - 1) * hGap;
+                if (rowWidth > availableWidth && cols > 1) {
+                    hGap = (availableWidth - cols * tileSize) / (cols - 1);
+                    rowWidth = cols * tileSize + (cols - 1) * hGap;
+                }
+                let startX = centerX - rowWidth / 2;
+                // Stagger odd rows horizontally (brick pattern) without going off-screen
+                if (rows > 1 && cols > 1 && (r % 2 === 1)) {
+                    const stagger = (tileSize + hGap) / 2;
+                    const maxShift = (availableWidth - rowWidth) / 2;
+                    startX = startX + Math.min(stagger, maxShift);
+                }
+                for (let c = 0; c < cols; c++) {
+                    const x = startX + c * (tileSize + hGap);
+                    positions.push({ x, y: rowY });
+                }
+            }
+
+            // If test run, quickly verify overlaps
+            if (isTestRun) {
+                for (let i = 0; i < positions.length; i++) {
+                    for (let j = i + 1; j < positions.length; j++) {
+                        const r1 = { x: positions[i].x, y: positions[i].y, width: tileSize, height: tileSize };
+                        const r2 = { x: positions[j].x, y: positions[j].y, width: tileSize, height: tileSize };
+                        if (checkOverlap(r1, r2, padding)) return null;
+                    }
+                }
+            }
+
+            return isTestRun ? positions : jitterPositions(positions);
         };
 
         const checkOverlap = (rect1, rect2, padding = 15) => {
@@ -548,13 +598,91 @@
 
             const containerWidth = letterContainer.offsetWidth;
             const containerHeight = letterContainer.offsetHeight;
-            
-            // Calculate optimal tile size that prevents overlaps
-            let { tileSize, fontSize } = calculateOptimalTileSize(letters.length, containerWidth, containerHeight);
-            
-            // Calculate hybrid positions (circle + random) with the optimal tile size
-            const { padding } = getSpacingConfig();
-            const positions = calculateHybridPositions(letters.length, containerWidth, containerHeight, tileSize, padding);
+
+            // New segmented pip/grid layout to maximize space and symmetry
+            const { padding, maxTileSize } = getSpacingConfig();
+
+            const buildPerRowCounts = (n, availW, availH) => {
+                // Playing card inspired patterns for 1..10
+                const pipMap = {
+                    1: [1],
+                    2: [1,1],
+                    3: [1,1,1],
+                    4: [2,2],
+                    5: [2,1,2],
+                    6: [2,2,2],
+                    7: [2,3,2],
+                    8: [2,2,2,2],
+                    9: [3,3,3],
+                    10: [3,4,3]
+                };
+                if (pipMap[n]) return pipMap[n].slice();
+
+                // Fallback to balanced grid for larger counts
+                const aspect = availW / availH;
+                let rows = Math.round(Math.sqrt(n / aspect));
+                rows = Math.max(2, Math.min(6, rows));
+                const base = Math.floor(n / rows);
+                let remainder = n % rows;
+                const perRow = new Array(rows).fill(base);
+                let mid = Math.floor(rows / 2);
+                let spread = 0;
+                while (remainder > 0) {
+                    const up = mid - spread;
+                    const down = mid + spread + (rows % 2 === 0 ? 1 : 0);
+                    if (up >= 0 && remainder > 0) { perRow[up]++; remainder--; }
+                    if (down < rows && remainder > 0) { perRow[down]++; remainder--; }
+                    spread++;
+                }
+                return perRow;
+            };
+
+            const calculateSegmentedLayout = (n, width, height, pad) => {
+                const outerMargin = pad; // small outer margin
+                const availableWidth = Math.max(0, width - 2 * outerMargin);
+                const availableHeight = Math.max(0, height - 2 * outerMargin);
+
+                const perRow = buildPerRowCounts(n, availableWidth, availableHeight);
+                const rows = perRow.length;
+                const rowHeight = rows > 0 ? availableHeight / rows : 0;
+
+                // Determine minimal segment dimension across all rows
+                let minSegSize = Infinity;
+                for (let r = 0; r < rows; r++) {
+                    const cols = perRow[r];
+                    const colWidth = cols > 0 ? availableWidth / cols : 0;
+                    minSegSize = Math.min(minSegSize, colWidth, rowHeight);
+                }
+
+                // Target tile size at 80% of segment, clamped
+                let tileSize = Math.floor(minSegSize * 0.8);
+                const minSize = 24;
+                tileSize = Math.max(minSize, Math.min(tileSize, maxTileSize));
+
+                const positions = [];
+                for (let r = 0; r < rows; r++) {
+                    const cols = perRow[r];
+                    const colWidth = cols > 0 ? availableWidth / cols : 0;
+                    const segmentTop = outerMargin + r * rowHeight;
+                    for (let c = 0; c < cols; c++) {
+                        const segmentLeft = outerMargin + c * colWidth;
+                        const centerX = segmentLeft + colWidth / 2;
+                        const centerY = segmentTop + rowHeight / 2;
+                        const maxDx = Math.max(0, (colWidth - tileSize) / 2);
+                        const maxDy = Math.max(0, (rowHeight - tileSize) / 2);
+                        const dx = (Math.random() * 2 - 1) * maxDx * 0.8; // stay well within segment
+                        const dy = (Math.random() * 2 - 1) * maxDy * 0.8;
+                        const x = centerX + dx - tileSize / 2;
+                        const y = centerY + dy - tileSize / 2;
+                        positions.push({ x, y });
+                    }
+                }
+
+                return { positions, tileSize };
+            };
+
+            const { positions, tileSize } = calculateSegmentedLayout(letters.length, containerWidth, containerHeight, padding);
+            const fontSize = tileSize * 0.6;
             
             // Decide render order
             let renderOrder;
