@@ -297,6 +297,15 @@
         const loader = document.getElementById('loader');
 
         let currentLetters = '';
+        let currentOrder = [];
+
+        const shuffleArray = (array) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        };
 
         const calculateOptimalTileSize = (letterCount, containerWidth, containerHeight) => {
             if (letterCount === 0) return { tileSize: 60, fontSize: 36 };
@@ -474,7 +483,7 @@
             );
         };
 
-        const scrambleAndPlaceLetters = (letters) => {
+        const scrambleAndPlaceLetters = (letters, shuffle = false) => {
             letterContainer.innerHTML = '';
             if (letters.length === 0) return;
 
@@ -487,8 +496,16 @@
             // Calculate hybrid positions (circle + random) with the optimal tile size
             const positions = calculateHybridPositions(letters.length, containerWidth, containerHeight, tileSize);
             
+            // Decide render order
+            let renderOrder;
+            if (shuffle || currentOrder.length !== letters.length) {
+                renderOrder = shuffleArray(letters.split(''));
+            } else {
+                renderOrder = currentOrder.slice();
+            }
+
             // Create and place tiles
-            letters.split('').forEach((char, index) => {
+            renderOrder.forEach((char, index) => {
                 if (char === ' ') return;
                 
                 const letterTile = document.createElement('div');
@@ -507,20 +524,26 @@
 
                 letterContainer.appendChild(letterTile);
             });
+
+            currentOrder = renderOrder;
         };
 
         const handleInput = () => {
             currentLetters = letterInput.value.replace(/\s/g, '');
-            scrambleAndPlaceLetters(currentLetters);
+            scrambleAndPlaceLetters(currentLetters, true);
         };
 
         const handleRescramble = () => {
-            scrambleAndPlaceLetters(currentLetters);
+            scrambleAndPlaceLetters(currentLetters, true);
+        };
+        
+        const handleRepositionOnly = () => {
+            scrambleAndPlaceLetters(currentLetters, false);
         };
         
         const handleViewportResize = () => {
             appContainer.style.height = `${window.visualViewport.height}px`;
-            setTimeout(handleRescramble, 50);
+            setTimeout(handleRepositionOnly, 50);
         };
 
         appContainer.style.height = `${window.visualViewport ? window.visualViewport.height : window.innerHeight}px`;
@@ -529,7 +552,7 @@
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', handleViewportResize);
         } else {
-            window.addEventListener('resize', handleRescramble);
+            window.addEventListener('resize', handleRepositionOnly);
         }
         if (letterInput.value) handleInput();
 
