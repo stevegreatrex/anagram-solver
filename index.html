@@ -235,6 +235,12 @@
         /* Button transition effects */
         .transition { transition: all 0.3s ease; }
         .transform { transform: translateZ(0); }
+
+        /* Mobile spacing reductions to maximize letter area */
+        @media (max-width: 480px) {
+            .p-4 { padding: 0.5rem; }
+            .mt-4 { margin-top: 0.5rem; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -299,6 +305,22 @@
         let currentLetters = '';
         let currentOrder = [];
 
+        const getViewportSize = () => ({
+            width: (window.visualViewport ? window.visualViewport.width : window.innerWidth),
+            height: (window.visualViewport ? window.visualViewport.height : window.innerHeight)
+        });
+
+        const getSpacingConfig = () => {
+            const { width } = getViewportSize();
+            const isSmall = width <= 480;
+            return {
+                padding: isSmall ? 8 : 10,
+                maxTileSize: isSmall ? 180 : 120,
+                areaFactor: isSmall ? 1.0 : 0.65,
+                circleCap: isSmall ? 8 : 16,
+            };
+        };
+
         const shuffleArray = (array) => {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -310,13 +332,13 @@
         const calculateOptimalTileSize = (letterCount, containerWidth, containerHeight) => {
             if (letterCount === 0) return { tileSize: 60, fontSize: 36 };
             
+            const { padding, maxTileSize, areaFactor } = getSpacingConfig();
             const minSize = 24; // Absolute minimum for readability
-            const maxSize = 100; // Maximum size
-            const padding = 15; // Space between letters
+            const maxSize = maxTileSize; // Maximum size (responsive)
             
             // Start with an initial estimate based on container area
             const containerArea = containerWidth * containerHeight;
-            let initialTileSize = Math.sqrt((containerArea / letterCount) * 0.5);
+            let initialTileSize = Math.sqrt((containerArea / letterCount) * areaFactor);
             initialTileSize = Math.max(minSize, Math.min(initialTileSize, maxSize));
             
             // Binary search to find the largest tile size that fits without overlaps
@@ -345,6 +367,9 @@
         const canFitWithoutOverlaps = (letterCount, containerWidth, containerHeight, tileSize, padding) => {
             // Test if we can position all letters without overlaps using our positioning algorithm
             const positions = calculateHybridPositions(letterCount, containerWidth, containerHeight, tileSize, padding, true);
+            if (!positions) {
+                return false;
+            }
             
             // Check if any positions overlap
             for (let i = 0; i < positions.length; i++) {
@@ -371,15 +396,16 @@
         };
 
         const calculateHybridPositions = (letterCount, containerWidth, containerHeight, tileSize, padding = 15, isTestRun = false) => {
+            const { circleCap } = getSpacingConfig();
             const centerX = containerWidth / 2;
             const centerY = containerHeight / 2;
             
             // Calculate maximum radius available in container
-            const margin = tileSize + padding;
-            const maxRadius = Math.min(
-                (containerWidth - 2 * margin) / 2,
-                (containerHeight - 2 * margin) / 2
-            );
+            const margin = (tileSize / 2) + padding;
+            const maxRx = (containerWidth - 2 * margin) / 2;
+            const maxRy = (containerHeight - 2 * margin) / 2;
+            const useEllipse = maxRy > maxRx * 1.1; // prefer ellipse in portrait/tall view
+            const maxRadius = Math.min(maxRx, maxRy);
             
             const positions = [];
             
@@ -392,36 +418,66 @@
                 return positions;
             }
             
-            // Try to fit letters in circle without overlap
+            // Try to fit letters in an ellipse (or circle) without overlap
             let circularLettersCount = 0;
             let radius = 0;
+            let rx = maxRx;
+            let ry = useEllipse ? maxRy : maxRadius;
             
-            // Find maximum number of letters that can fit in circle without overlap
-            for (let testCount = Math.min(letterCount, 15); testCount >= 2; testCount--) {
+            // Find maximum number of letters that can fit around perimeter without overlap
+            for (let testCount = Math.min(letterCount, circleCap); testCount >= 2; testCount--) {
                 const angleStep = (2 * Math.PI) / testCount;
-                // Calculate minimum radius needed for no overlap
-                // Distance between adjacent letter centers should be >= tileSize + padding
+                // Minimum spacing between adjacent letter centers
                 const chordLength = tileSize + padding;
-                const testRadius = chordLength / (2 * Math.sin(angleStep / 2));
-                
-                if (testRadius <= maxRadius) {
-                    circularLettersCount = testCount;
-                    radius = testRadius;
-                    break;
+
+                if (!useEllipse) {
+                    // Circle case (legacy)
+                    const testRadius = chordLength / (2 * Math.sin(angleStep / 2));
+                    if (testRadius <= maxRadius) {
+                        circularLettersCount = testCount;
+                        radius = testRadius;
+                        rx = testRadius;
+                        ry = testRadius;
+                        break;
+                    }
+                } else {
+                    // Ellipse case: try with max available rx, ry and verify spacing by overlap checks
+                    let tempPositions = [];
+                    for (let i = 0; i < testCount; i++) {
+                        const angle = (i * 2 * Math.PI) / testCount - Math.PI / 2; // start top
+                        const x = centerX + rx * Math.cos(angle) - tileSize / 2;
+                        const y = centerY + ry * Math.sin(angle) - tileSize / 2;
+                        tempPositions.push({ x, y });
+                    }
+                    // Check for overlaps among perimeter positions
+                    let ok = true;
+                    for (let i = 0; i < tempPositions.length && ok; i++) {
+                        for (let j = i + 1; j < tempPositions.length; j++) {
+                            const r1 = { x: tempPositions[i].x, y: tempPositions[i].y, width: tileSize, height: tileSize };
+                            const r2 = { x: tempPositions[j].x, y: tempPositions[j].y, width: tileSize, height: tileSize };
+                            if (checkOverlap(r1, r2, padding)) { ok = false; break; }
+                        }
+                    }
+                    if (ok) {
+                        circularLettersCount = testCount;
+                        positions.push(...tempPositions);
+                        break;
+                    }
                 }
             }
             
             if (!isTestRun) {
-                console.log(`Letters positioned: ${circularLettersCount} in circle, ${letterCount - circularLettersCount} random`);
+                console.log(`Letters positioned: ${circularLettersCount} on ${useEllipse ? 'ellipse' : 'circle'}, ${letterCount - circularLettersCount} random`);
             }
             
-            // Place letters in circle
-            for (let i = 0; i < circularLettersCount; i++) {
-                const angle = (i * 2 * Math.PI) / circularLettersCount - Math.PI / 2; // Start from top
-                const x = centerX + radius * Math.cos(angle) - tileSize / 2;
-                const y = centerY + radius * Math.sin(angle) - tileSize / 2;
-                
-                positions.push({ x, y });
+            // Place letters on perimeter if not already placed (circle case)
+            if (!useEllipse) {
+                for (let i = 0; i < circularLettersCount; i++) {
+                    const angle = (i * 2 * Math.PI) / circularLettersCount - Math.PI / 2; // Start from top
+                    const x = centerX + radius * Math.cos(angle) - tileSize / 2;
+                    const y = centerY + radius * Math.sin(angle) - tileSize / 2;
+                    positions.push({ x, y });
+                }
             }
             
             // Place remaining letters randomly around the container
@@ -433,8 +489,11 @@
                 
                 while (!validPosition && attempts < 200) {
                     // Random position within container bounds
-                    x = Math.random() * (containerWidth - tileSize);
-                    y = Math.random() * (containerHeight - tileSize);
+                    // Bias random placement toward center area to better use space
+                    const biasX = (Math.random() * 0.7 + 0.15); // 15%-85%
+                    const biasY = (Math.random() * 0.7 + 0.15);
+                    x = biasX * (containerWidth - tileSize);
+                    y = biasY * (containerHeight - tileSize);
                     
                     // Check if position overlaps with existing letters
                     const newRect = { x, y, width: tileSize, height: tileSize };
@@ -494,7 +553,8 @@
             let { tileSize, fontSize } = calculateOptimalTileSize(letters.length, containerWidth, containerHeight);
             
             // Calculate hybrid positions (circle + random) with the optimal tile size
-            const positions = calculateHybridPositions(letters.length, containerWidth, containerHeight, tileSize);
+            const { padding } = getSpacingConfig();
+            const positions = calculateHybridPositions(letters.length, containerWidth, containerHeight, tileSize, padding);
             
             // Decide render order
             let renderOrder;
