@@ -329,196 +329,29 @@
             return array;
         };
 
-        const calculateOptimalTileSize = (letterCount, containerWidth, containerHeight) => {
-            if (letterCount === 0) return { tileSize: 60, fontSize: 36 };
-            
-            const { padding, maxTileSize, areaFactor } = getSpacingConfig();
-            const minSize = 24; // Absolute minimum for readability
-            const maxSize = maxTileSize; // Maximum size (responsive)
-            
-            // Start with an initial estimate based on container area
-            const containerArea = containerWidth * containerHeight;
-            let initialTileSize = Math.sqrt((containerArea / letterCount) * areaFactor);
-            initialTileSize = Math.max(minSize, Math.min(initialTileSize, maxSize));
-            
-            // Binary search to find the largest tile size that fits without overlaps
-            let low = minSize;
-            let high = Math.min(initialTileSize, maxSize);
-            let bestTileSize = minSize;
-            
-            // Try different tile sizes to find the largest one that works
-            for (let attempts = 0; attempts < 10; attempts++) {
-                const testTileSize = Math.floor((low + high) / 2);
-                
-                if (canFitWithoutOverlaps(letterCount, containerWidth, containerHeight, testTileSize, padding)) {
-                    bestTileSize = testTileSize;
-                    low = testTileSize + 1;
-                } else {
-                    high = testTileSize - 1;
-                }
-                
-                if (low > high) break;
-            }
-            
-            const fontSize = bestTileSize * 0.6;
-            return { tileSize: bestTileSize, fontSize };
-        };
+        
 
-        const canFitWithoutOverlaps = (letterCount, containerWidth, containerHeight, tileSize, padding) => {
-            // Test if we can position all letters without overlaps using our positioning algorithm
-            const positions = calculateHybridPositions(letterCount, containerWidth, containerHeight, tileSize, padding, true);
-            if (!positions) {
-                return false;
-            }
-            
-            // Check if any positions overlap
-            for (let i = 0; i < positions.length; i++) {
-                for (let j = i + 1; j < positions.length; j++) {
-                    const rect1 = { 
-                        x: positions[i].x, 
-                        y: positions[i].y, 
-                        width: tileSize, 
-                        height: tileSize 
-                    };
-                    const rect2 = { 
-                        x: positions[j].x, 
-                        y: positions[j].y, 
-                        width: tileSize, 
-                        height: tileSize 
-                    };
-                    
-                    if (checkOverlap(rect1, rect2, padding)) {
-                        return false; // Found overlap
-                    }
-                }
-            }
-            return true; // No overlaps found
-        };
-
-        const calculateHybridPositions = (letterCount, containerWidth, containerHeight, tileSize, padding = 15, isTestRun = false) => {
-            const centerX = containerWidth / 2;
-            const centerY = containerHeight / 2;
-            const margin = (tileSize / 2) + padding;
-
-            const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-
-            const toPixel = (nx, ny) => ({
-                x: clamp(nx * containerWidth - tileSize / 2, margin, containerWidth - margin - tileSize / 2),
-                y: clamp(ny * containerHeight - tileSize / 2, margin, containerHeight - margin - tileSize / 2)
-            });
-
-            const buildFromGrid = (gridPoints) => gridPoints.map(p => ({
-                x: p.x - tileSize / 2,
-                y: p.y - tileSize / 2
-            }));
-
-            // Predefined card-like pip layouts for 1..10 using normalized positions
-            const getPipLayout = (n) => {
-                const left = margin;
-                const right = containerWidth - margin;
-                const centerXpx = centerX;
-                const top = margin;
-                const bottom = containerHeight - margin;
-                const midTop = top + (bottom - top) * 0.33;
-                const midBottom = top + (bottom - top) * 0.67;
-                const rows5 = [top, midTop, centerY, midBottom, bottom];
-                const rows3 = [top, centerY, bottom];
-                const colLeft = left;
-                const colRight = right;
-
-                const pts = [];
-                switch (n) {
-                    case 1:
-                        pts.push({ x: centerXpx, y: centerY });
-                        break;
-                    case 2:
-                        pts.push({ x: centerXpx, y: top }, { x: centerXpx, y: bottom });
-                        break;
-                    case 3:
-                        pts.push({ x: centerXpx, y: top }, { x: centerXpx, y: centerY }, { x: centerXpx, y: bottom });
-                        break;
-                    case 4:
-                        pts.push({ x: colLeft, y: top }, { x: colRight, y: top }, { x: colLeft, y: bottom }, { x: colRight, y: bottom });
-                        break;
-                    case 5:
-                        pts.push({ x: colLeft, y: top }, { x: colRight, y: top }, { x: centerXpx, y: centerY }, { x: colLeft, y: bottom }, { x: colRight, y: bottom });
-                        break;
-                    case 6:
-                        rows3.forEach(y => { pts.push({ x: colLeft, y }); pts.push({ x: colRight, y }); });
-                        break;
-                    case 7:
-                        rows3.forEach(y => { pts.push({ x: colLeft, y }); pts.push({ x: colRight, y }); });
-                        pts.push({ x: centerXpx, y: centerY });
-                        break;
-                    case 8:
-                        rows3.forEach(y => { pts.push({ x: colLeft, y }); pts.push({ x: colRight, y }); });
-                        pts.push({ x: centerXpx, y: midTop }, { x: centerXpx, y: midBottom });
-                        break;
-                    case 9:
-                        rows5.forEach(y => { pts.push({ x: colLeft, y }); pts.push({ x: colRight, y }); });
-                        pts.push({ x: centerXpx, y: centerY });
-                        break;
-                    case 10:
-                        rows5.forEach(y => { pts.push({ x: colLeft, y }); pts.push({ x: colRight, y }); });
-                        pts.push({ x: centerXpx, y: midTop }, { x: centerXpx, y: midBottom });
-                        break;
-                    default:
-                        return null;
-                }
-                return buildFromGrid(pts);
+        // New segmented layout helpers
+        const buildPerRowCounts = (n, availW, availH) => {
+            const pipMap = {
+                1: [1],
+                2: [1,1],
+                3: [1,1,1],
+                4: [2,2],
+                5: [2,1,2],
+                6: [2,2,2],
+                7: [2,3,2],
+                8: [2,2,2,2],
+                9: [3,3,3],
+                10: [3,4,3]
             };
+            if (pipMap[n]) return pipMap[n].slice();
 
-            const jitterPositions = (basePositions) => {
-                const maxJitterX = Math.min(14, Math.max(4, Math.floor(tileSize * 0.10)));
-                const maxJitterY = Math.min(8, Math.max(2, Math.floor(tileSize * 0.05)));
-                const jittered = [];
-                for (let i = 0; i < basePositions.length; i++) {
-                    const original = basePositions[i];
-                    let placed = false;
-                    for (let attempt = 0; attempt < 20 && !placed; attempt++) {
-                        const dx = (Math.random() * 2 - 1) * maxJitterX;
-                        const dy = (Math.random() * 2 - 1) * maxJitterY;
-                        const candidate = {
-                            x: clamp(original.x + dx, margin, containerWidth - margin - tileSize),
-                            y: clamp(original.y + dy, margin, containerHeight - margin - tileSize)
-                        };
-                        // Use full padding to avoid any overlaps
-                        const softPadding = padding;
-                        let ok = true;
-                        for (const p of jittered) {
-                            if (checkOverlap({ x: candidate.x, y: candidate.y, width: tileSize, height: tileSize }, { x: p.x, y: p.y, width: tileSize, height: tileSize }, softPadding)) {
-                                ok = false; break;
-                            }
-                        }
-                        if (ok) { jittered.push(candidate); placed = true; }
-                    }
-                    if (!placed) {
-                        // Fallback to original
-                        jittered.push({
-                            x: clamp(original.x, margin, containerWidth - margin - tileSize),
-                            y: clamp(original.y, margin, containerHeight - margin - tileSize)
-                        });
-                    }
-                }
-                return jittered;
-            };
-
-            // Try card pip layout for 1..10
-            if (letterCount <= 10) {
-                const pip = getPipLayout(letterCount);
-                if (pip) return isTestRun ? pip : jitterPositions(pip);
-            }
-
-            // General symmetric centered grid for larger counts
-            const availableWidth = containerWidth - 2 * margin;
-            const availableHeight = containerHeight - 2 * margin;
-            const aspect = availableWidth / availableHeight;
-            let rows = Math.round(Math.sqrt(letterCount / aspect));
-            rows = clamp(rows, 2, 6);
-
-            // Distribute counts per row (center rows first for extra)
-            const base = Math.floor(letterCount / rows);
-            let remainder = letterCount % rows;
+            const aspect = availW / availH;
+            let rows = Math.round(Math.sqrt(n / aspect));
+            rows = Math.max(2, Math.min(6, rows));
+            const base = Math.floor(n / rows);
+            let remainder = n % rows;
             const perRow = new Array(rows).fill(base);
             let mid = Math.floor(rows / 2);
             let spread = 0;
@@ -529,173 +362,55 @@
                 if (down < rows && remainder > 0) { perRow[down]++; remainder--; }
                 spread++;
             }
+            return perRow;
+        };
 
-            // Compute vertical spacing centered with padding if possible
-            const desiredVGap = padding;
-            const minTotalHeight = rows * tileSize + (rows - 1) * 0; // worst case, no vertical gap
-            const idealTotalHeight = rows * tileSize + (rows - 1) * desiredVGap;
-            let vGap;
-            let startY;
-            if (idealTotalHeight <= availableHeight) {
-                vGap = desiredVGap;
-                startY = centerY - idealTotalHeight / 2;
-            } else {
-                // shrink gap to fit
-                vGap = rows > 1 ? (availableHeight - rows * tileSize) / (rows - 1) : 0;
-                startY = margin;
+        const calculateSegmentedLayout = (n, width, height, pad) => {
+            const { maxTileSize } = getSpacingConfig();
+            const outerMargin = pad;
+            const availableWidth = Math.max(0, width - 2 * outerMargin);
+            const availableHeight = Math.max(0, height - 2 * outerMargin);
+
+            const perRow = buildPerRowCounts(n, availableWidth, availableHeight);
+            const rows = perRow.length;
+            const rowHeight = rows > 0 ? availableHeight / rows : 0;
+
+            let minSegSize = Infinity;
+            for (let r = 0; r < rows; r++) {
+                const cols = perRow[r];
+                const colWidth = cols > 0 ? availableWidth / cols : 0;
+                minSegSize = Math.min(minSegSize, colWidth, rowHeight);
             }
+
+            let tileSize = Math.floor(minSegSize * 0.8);
+            const minSize = 24;
+            tileSize = Math.max(minSize, Math.min(tileSize, maxTileSize));
 
             const positions = [];
             for (let r = 0; r < rows; r++) {
                 const cols = perRow[r];
-                const rowY = startY + r * (tileSize + vGap);
-                // Horizontal spacing: try desired padding, shrink if needed to keep on-screen
-                let hGap = cols > 1 ? padding : 0;
-                let rowWidth = cols * tileSize + (cols - 1) * hGap;
-                if (rowWidth > availableWidth && cols > 1) {
-                    hGap = (availableWidth - cols * tileSize) / (cols - 1);
-                    rowWidth = cols * tileSize + (cols - 1) * hGap;
-                }
-                let startX = centerX - rowWidth / 2;
-                // Stagger odd rows horizontally (brick pattern) without going off-screen
-                if (rows > 1 && cols > 1 && (r % 2 === 1)) {
-                    const stagger = (tileSize + hGap) / 2;
-                    const maxShift = (availableWidth - rowWidth) / 2;
-                    startX = startX + Math.min(stagger, maxShift);
-                }
+                const colWidth = cols > 0 ? availableWidth / cols : 0;
+                const segmentTop = outerMargin + r * rowHeight;
                 for (let c = 0; c < cols; c++) {
-                    const x = startX + c * (tileSize + hGap);
-                    positions.push({ x, y: rowY });
+                    const segmentLeft = outerMargin + c * colWidth;
+                    const centerX = segmentLeft + colWidth / 2;
+                    const centerY = segmentTop + rowHeight / 2;
+                    const maxDx = Math.max(0, (colWidth - tileSize) / 2);
+                    const maxDy = Math.max(0, (rowHeight - tileSize) / 2);
+                    const dx = (Math.random() * 2 - 1) * maxDx * 0.8;
+                    const dy = (Math.random() * 2 - 1) * maxDy * 0.8;
+                    const x = centerX + dx - tileSize / 2;
+                    const y = centerY + dy - tileSize / 2;
+                    positions.push({ x, y });
                 }
             }
 
-            // If test run, quickly verify overlaps
-            if (isTestRun) {
-                for (let i = 0; i < positions.length; i++) {
-                    for (let j = i + 1; j < positions.length; j++) {
-                        const r1 = { x: positions[i].x, y: positions[i].y, width: tileSize, height: tileSize };
-                        const r2 = { x: positions[j].x, y: positions[j].y, width: tileSize, height: tileSize };
-                        if (checkOverlap(r1, r2, padding)) return null;
-                    }
-                }
-            }
-
-            return isTestRun ? positions : jitterPositions(positions);
+            return { positions, tileSize };
         };
 
-        const checkOverlap = (rect1, rect2, padding = 15) => {
-            return (
-                rect1.x < rect2.x + rect2.width + padding &&
-                rect1.x + rect1.width + padding > rect2.x &&
-                rect1.y < rect2.y + rect2.height + padding &&
-                rect1.y + rect1.height + padding > rect2.y
-            );
-        };
-
-        const scrambleAndPlaceLetters = (letters, shuffle = false) => {
-            letterContainer.innerHTML = '';
-            if (letters.length === 0) return;
-
-            const containerWidth = letterContainer.offsetWidth;
-            const containerHeight = letterContainer.offsetHeight;
-
-            // New segmented pip/grid layout to maximize space and symmetry
-            const { padding, maxTileSize } = getSpacingConfig();
-
-            const buildPerRowCounts = (n, availW, availH) => {
-                // Playing card inspired patterns for 1..10
-                const pipMap = {
-                    1: [1],
-                    2: [1,1],
-                    3: [1,1,1],
-                    4: [2,2],
-                    5: [2,1,2],
-                    6: [2,2,2],
-                    7: [2,3,2],
-                    8: [2,2,2,2],
-                    9: [3,3,3],
-                    10: [3,4,3]
-                };
-                if (pipMap[n]) return pipMap[n].slice();
-
-                // Fallback to balanced grid for larger counts
-                const aspect = availW / availH;
-                let rows = Math.round(Math.sqrt(n / aspect));
-                rows = Math.max(2, Math.min(6, rows));
-                const base = Math.floor(n / rows);
-                let remainder = n % rows;
-                const perRow = new Array(rows).fill(base);
-                let mid = Math.floor(rows / 2);
-                let spread = 0;
-                while (remainder > 0) {
-                    const up = mid - spread;
-                    const down = mid + spread + (rows % 2 === 0 ? 1 : 0);
-                    if (up >= 0 && remainder > 0) { perRow[up]++; remainder--; }
-                    if (down < rows && remainder > 0) { perRow[down]++; remainder--; }
-                    spread++;
-                }
-                return perRow;
-            };
-
-            const calculateSegmentedLayout = (n, width, height, pad) => {
-                const outerMargin = pad; // small outer margin
-                const availableWidth = Math.max(0, width - 2 * outerMargin);
-                const availableHeight = Math.max(0, height - 2 * outerMargin);
-
-                const perRow = buildPerRowCounts(n, availableWidth, availableHeight);
-                const rows = perRow.length;
-                const rowHeight = rows > 0 ? availableHeight / rows : 0;
-
-                // Determine minimal segment dimension across all rows
-                let minSegSize = Infinity;
-                for (let r = 0; r < rows; r++) {
-                    const cols = perRow[r];
-                    const colWidth = cols > 0 ? availableWidth / cols : 0;
-                    minSegSize = Math.min(minSegSize, colWidth, rowHeight);
-                }
-
-                // Target tile size at 80% of segment, clamped
-                let tileSize = Math.floor(minSegSize * 0.8);
-                const minSize = 24;
-                tileSize = Math.max(minSize, Math.min(tileSize, maxTileSize));
-
-                const positions = [];
-                for (let r = 0; r < rows; r++) {
-                    const cols = perRow[r];
-                    const colWidth = cols > 0 ? availableWidth / cols : 0;
-                    const segmentTop = outerMargin + r * rowHeight;
-                    for (let c = 0; c < cols; c++) {
-                        const segmentLeft = outerMargin + c * colWidth;
-                        const centerX = segmentLeft + colWidth / 2;
-                        const centerY = segmentTop + rowHeight / 2;
-                        const maxDx = Math.max(0, (colWidth - tileSize) / 2);
-                        const maxDy = Math.max(0, (rowHeight - tileSize) / 2);
-                        const dx = (Math.random() * 2 - 1) * maxDx * 0.8; // stay well within segment
-                        const dy = (Math.random() * 2 - 1) * maxDy * 0.8;
-                        const x = centerX + dx - tileSize / 2;
-                        const y = centerY + dy - tileSize / 2;
-                        positions.push({ x, y });
-                    }
-                }
-
-                return { positions, tileSize };
-            };
-
-            const { positions, tileSize } = calculateSegmentedLayout(letters.length, containerWidth, containerHeight, padding);
-            const fontSize = tileSize * 0.6;
-            
-            // Decide render order
-            let renderOrder;
-            if (shuffle || currentOrder.length !== letters.length) {
-                renderOrder = shuffleArray(letters.split(''));
-            } else {
-                renderOrder = currentOrder.slice();
-            }
-
-            // Create and place tiles
+        const renderLetters = (positions, tileSize, fontSize, renderOrder) => {
             renderOrder.forEach((char, index) => {
                 if (char === ' ') return;
-                
                 const letterTile = document.createElement('div');
                 letterTile.textContent = char.toUpperCase();
                 letterTile.className = 'letter-tile absolute flex items-center justify-center bg-blue-500 text-white rounded-lg shadow-lg font-semibold select-none cursor-pointer';
@@ -704,15 +419,32 @@
                 letterTile.style.fontSize = `${fontSize}px`;
                 letterTile.style.left = `${positions[index].x}px`;
                 letterTile.style.top = `${positions[index].y}px`;
-
-                // Add click listener to toggle opacity
-                letterTile.addEventListener('click', () => {
-                    letterTile.classList.toggle('dimmed');
-                });
-
+                letterTile.addEventListener('click', () => { letterTile.classList.toggle('dimmed'); });
                 letterContainer.appendChild(letterTile);
             });
+        };
 
+        
+
+        const scrambleAndPlaceLetters = (letters, shuffle = false) => {
+            letterContainer.innerHTML = '';
+            if (letters.length === 0) return;
+
+            const containerWidth = letterContainer.offsetWidth;
+            const containerHeight = letterContainer.offsetHeight;
+            const { padding } = getSpacingConfig();
+
+            const layout = calculateSegmentedLayout(letters.length, containerWidth, containerHeight, padding);
+            const tileSize = layout.tileSize;
+            const fontSize = tileSize * 0.6;
+            const positions = layout.positions;
+
+            // Decide render order
+            const renderOrder = (shuffle || currentOrder.length !== letters.length)
+                ? shuffleArray(letters.split(''))
+                : currentOrder.slice();
+
+            renderLetters(positions, tileSize, fontSize, renderOrder);
             currentOrder = renderOrder;
         };
 
