@@ -235,6 +235,12 @@
         /* Button transition effects */
         .transition { transition: all 0.3s ease; }
         .transform { transform: translateZ(0); }
+
+        /* Mobile spacing reductions to maximize letter area */
+        @media (max-width: 480px) {
+            .p-4 { padding: 0.5rem; }
+            .mt-4 { margin-top: 0.5rem; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -297,200 +303,114 @@
         const loader = document.getElementById('loader');
 
         let currentLetters = '';
+        let currentOrder = [];
 
-        const calculateOptimalTileSize = (letterCount, containerWidth, containerHeight) => {
-            if (letterCount === 0) return { tileSize: 60, fontSize: 36 };
-            
-            const minSize = 24; // Absolute minimum for readability
-            const maxSize = 100; // Maximum size
-            const padding = 15; // Space between letters
-            
-            // Start with an initial estimate based on container area
-            const containerArea = containerWidth * containerHeight;
-            let initialTileSize = Math.sqrt((containerArea / letterCount) * 0.5);
-            initialTileSize = Math.max(minSize, Math.min(initialTileSize, maxSize));
-            
-            // Binary search to find the largest tile size that fits without overlaps
-            let low = minSize;
-            let high = Math.min(initialTileSize, maxSize);
-            let bestTileSize = minSize;
-            
-            // Try different tile sizes to find the largest one that works
-            for (let attempts = 0; attempts < 10; attempts++) {
-                const testTileSize = Math.floor((low + high) / 2);
-                
-                if (canFitWithoutOverlaps(letterCount, containerWidth, containerHeight, testTileSize, padding)) {
-                    bestTileSize = testTileSize;
-                    low = testTileSize + 1;
-                } else {
-                    high = testTileSize - 1;
-                }
-                
-                if (low > high) break;
-            }
-            
-            const fontSize = bestTileSize * 0.6;
-            return { tileSize: bestTileSize, fontSize };
+        const getViewportSize = () => ({
+            width: (window.visualViewport ? window.visualViewport.width : window.innerWidth),
+            height: (window.visualViewport ? window.visualViewport.height : window.innerHeight)
+        });
+
+        const getSpacingConfig = () => {
+            const { width } = getViewportSize();
+            const isSmall = width <= 480;
+            return {
+                padding: isSmall ? 8 : 10,
+                maxTileSize: isSmall ? 180 : 120,
+                areaFactor: isSmall ? 1.0 : 0.65,
+                circleCap: isSmall ? 8 : 16,
+            };
         };
 
-        const canFitWithoutOverlaps = (letterCount, containerWidth, containerHeight, tileSize, padding) => {
-            // Test if we can position all letters without overlaps using our positioning algorithm
-            const positions = calculateHybridPositions(letterCount, containerWidth, containerHeight, tileSize, padding, true);
-            
-            // Check if any positions overlap
-            for (let i = 0; i < positions.length; i++) {
-                for (let j = i + 1; j < positions.length; j++) {
-                    const rect1 = { 
-                        x: positions[i].x, 
-                        y: positions[i].y, 
-                        width: tileSize, 
-                        height: tileSize 
-                    };
-                    const rect2 = { 
-                        x: positions[j].x, 
-                        y: positions[j].y, 
-                        width: tileSize, 
-                        height: tileSize 
-                    };
-                    
-                    if (checkOverlap(rect1, rect2, padding)) {
-                        return false; // Found overlap
-                    }
-                }
+        const shuffleArray = (array) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
             }
-            return true; // No overlaps found
+            return array;
         };
 
-        const calculateHybridPositions = (letterCount, containerWidth, containerHeight, tileSize, padding = 15, isTestRun = false) => {
-            const centerX = containerWidth / 2;
-            const centerY = containerHeight / 2;
-            
-            // Calculate maximum radius available in container
-            const margin = tileSize + padding;
-            const maxRadius = Math.min(
-                (containerWidth - 2 * margin) / 2,
-                (containerHeight - 2 * margin) / 2
-            );
-            
+        
+
+        // New segmented layout helpers
+        const buildPerRowCounts = (n, availW, availH) => {
+            const pipMap = {
+                1: [1],
+                2: [1,1],
+                3: [1,1,1],
+                4: [2,2],
+                5: [2,1,2],
+                6: [2,2,2],
+                7: [2,3,2],
+                8: [2,2,2,2],
+                9: [3,3,3],
+                10: [3,4,3]
+            };
+            if (pipMap[n]) return pipMap[n].slice();
+
+            const aspect = availW / availH;
+            let rows = Math.round(Math.sqrt(n / aspect));
+            rows = Math.max(2, Math.min(6, rows));
+            const base = Math.floor(n / rows);
+            let remainder = n % rows;
+            const perRow = new Array(rows).fill(base);
+            let mid = Math.floor(rows / 2);
+            let spread = 0;
+            while (remainder > 0) {
+                const up = mid - spread;
+                const down = mid + spread + (rows % 2 === 0 ? 1 : 0);
+                if (up >= 0 && remainder > 0) { perRow[up]++; remainder--; }
+                if (down < rows && remainder > 0) { perRow[down]++; remainder--; }
+                spread++;
+            }
+            return perRow;
+        };
+
+        const calculateSegmentedLayout = (n, width, height, pad) => {
+            const { maxTileSize } = getSpacingConfig();
+            const outerMargin = pad;
+            const availableWidth = Math.max(0, width - 2 * outerMargin);
+            const availableHeight = Math.max(0, height - 2 * outerMargin);
+
+            const perRow = buildPerRowCounts(n, availableWidth, availableHeight);
+            const rows = perRow.length;
+            const rowHeight = rows > 0 ? availableHeight / rows : 0;
+
+            let minSegSize = Infinity;
+            for (let r = 0; r < rows; r++) {
+                const cols = perRow[r];
+                const colWidth = cols > 0 ? availableWidth / cols : 0;
+                minSegSize = Math.min(minSegSize, colWidth, rowHeight);
+            }
+
+            let tileSize = Math.floor(minSegSize * 0.8);
+            const minSize = 24;
+            tileSize = Math.max(minSize, Math.min(tileSize, maxTileSize));
+
             const positions = [];
-            
-            if (letterCount === 1) {
-                // Single letter in center
-                positions.push({
-                    x: centerX - tileSize / 2,
-                    y: centerY - tileSize / 2
-                });
-                return positions;
-            }
-            
-            // Try to fit letters in circle without overlap
-            let circularLettersCount = 0;
-            let radius = 0;
-            
-            // Find maximum number of letters that can fit in circle without overlap
-            for (let testCount = Math.min(letterCount, 15); testCount >= 2; testCount--) {
-                const angleStep = (2 * Math.PI) / testCount;
-                // Calculate minimum radius needed for no overlap
-                // Distance between adjacent letter centers should be >= tileSize + padding
-                const chordLength = tileSize + padding;
-                const testRadius = chordLength / (2 * Math.sin(angleStep / 2));
-                
-                if (testRadius <= maxRadius) {
-                    circularLettersCount = testCount;
-                    radius = testRadius;
-                    break;
+            for (let r = 0; r < rows; r++) {
+                const cols = perRow[r];
+                const colWidth = cols > 0 ? availableWidth / cols : 0;
+                const segmentTop = outerMargin + r * rowHeight;
+                for (let c = 0; c < cols; c++) {
+                    const segmentLeft = outerMargin + c * colWidth;
+                    const centerX = segmentLeft + colWidth / 2;
+                    const centerY = segmentTop + rowHeight / 2;
+                    const maxDx = Math.max(0, (colWidth - tileSize) / 2);
+                    const maxDy = Math.max(0, (rowHeight - tileSize) / 2);
+                    const dx = (Math.random() * 2 - 1) * maxDx * 0.8;
+                    const dy = (Math.random() * 2 - 1) * maxDy * 0.8;
+                    const x = centerX + dx - tileSize / 2;
+                    const y = centerY + dy - tileSize / 2;
+                    positions.push({ x, y });
                 }
             }
-            
-            if (!isTestRun) {
-                console.log(`Letters positioned: ${circularLettersCount} in circle, ${letterCount - circularLettersCount} random`);
-            }
-            
-            // Place letters in circle
-            for (let i = 0; i < circularLettersCount; i++) {
-                const angle = (i * 2 * Math.PI) / circularLettersCount - Math.PI / 2; // Start from top
-                const x = centerX + radius * Math.cos(angle) - tileSize / 2;
-                const y = centerY + radius * Math.sin(angle) - tileSize / 2;
-                
-                positions.push({ x, y });
-            }
-            
-            // Place remaining letters randomly around the container
-            const remainingLetters = letterCount - circularLettersCount;
-            for (let i = 0; i < remainingLetters; i++) {
-                let attempts = 0;
-                let validPosition = false;
-                let x, y;
-                
-                while (!validPosition && attempts < 200) {
-                    // Random position within container bounds
-                    x = Math.random() * (containerWidth - tileSize);
-                    y = Math.random() * (containerHeight - tileSize);
-                    
-                    // Check if position overlaps with existing letters
-                    const newRect = { x, y, width: tileSize, height: tileSize };
-                    validPosition = true;
-                    
-                    for (const pos of positions) {
-                        const existingRect = { 
-                            x: pos.x, 
-                            y: pos.y, 
-                            width: tileSize, 
-                            height: tileSize 
-                        };
-                        
-                        if (checkOverlap(newRect, existingRect, padding)) {
-                            validPosition = false;
-                            break;
-                        }
-                    }
-                    
-                    attempts++;
-                }
-                
-                // If we couldn't find a non-overlapping position in test run, return failure
-                if (isTestRun && attempts >= 200) {
-                    return null; // Indicates failure to place without overlaps
-                }
-                
-                // For actual placement, if we couldn't find a position, place it anyway but this should be rare now
-                if (attempts >= 200) {
-                    x = Math.random() * (containerWidth - tileSize);
-                    y = Math.random() * (containerHeight - tileSize);
-                }
-                
-                positions.push({ x, y });
-            }
-            
-            return positions;
+
+            return { positions, tileSize };
         };
 
-        const checkOverlap = (rect1, rect2, padding = 15) => {
-            return (
-                rect1.x < rect2.x + rect2.width + padding &&
-                rect1.x + rect1.width + padding > rect2.x &&
-                rect1.y < rect2.y + rect2.height + padding &&
-                rect1.y + rect1.height + padding > rect2.y
-            );
-        };
-
-        const scrambleAndPlaceLetters = (letters) => {
-            letterContainer.innerHTML = '';
-            if (letters.length === 0) return;
-
-            const containerWidth = letterContainer.offsetWidth;
-            const containerHeight = letterContainer.offsetHeight;
-            
-            // Calculate optimal tile size that prevents overlaps
-            let { tileSize, fontSize } = calculateOptimalTileSize(letters.length, containerWidth, containerHeight);
-            
-            // Calculate hybrid positions (circle + random) with the optimal tile size
-            const positions = calculateHybridPositions(letters.length, containerWidth, containerHeight, tileSize);
-            
-            // Create and place tiles
-            letters.split('').forEach((char, index) => {
+        const renderLetters = (positions, tileSize, fontSize, renderOrder) => {
+            renderOrder.forEach((char, index) => {
                 if (char === ' ') return;
-                
                 const letterTile = document.createElement('div');
                 letterTile.textContent = char.toUpperCase();
                 letterTile.className = 'letter-tile absolute flex items-center justify-center bg-blue-500 text-white rounded-lg shadow-lg font-semibold select-none cursor-pointer';
@@ -499,28 +419,51 @@
                 letterTile.style.fontSize = `${fontSize}px`;
                 letterTile.style.left = `${positions[index].x}px`;
                 letterTile.style.top = `${positions[index].y}px`;
-
-                // Add click listener to toggle opacity
-                letterTile.addEventListener('click', () => {
-                    letterTile.classList.toggle('dimmed');
-                });
-
+                letterTile.addEventListener('click', () => { letterTile.classList.toggle('dimmed'); });
                 letterContainer.appendChild(letterTile);
             });
         };
 
+        
+
+        const scrambleAndPlaceLetters = (letters, shuffle = false) => {
+            letterContainer.innerHTML = '';
+            if (letters.length === 0) return;
+
+            const containerWidth = letterContainer.offsetWidth;
+            const containerHeight = letterContainer.offsetHeight;
+            const { padding } = getSpacingConfig();
+
+            const layout = calculateSegmentedLayout(letters.length, containerWidth, containerHeight, padding);
+            const tileSize = layout.tileSize;
+            const fontSize = tileSize * 0.6;
+            const positions = layout.positions;
+
+            // Decide render order
+            const renderOrder = (shuffle || currentOrder.length !== letters.length)
+                ? shuffleArray(letters.split(''))
+                : currentOrder.slice();
+
+            renderLetters(positions, tileSize, fontSize, renderOrder);
+            currentOrder = renderOrder;
+        };
+
         const handleInput = () => {
             currentLetters = letterInput.value.replace(/\s/g, '');
-            scrambleAndPlaceLetters(currentLetters);
+            scrambleAndPlaceLetters(currentLetters, true);
         };
 
         const handleRescramble = () => {
-            scrambleAndPlaceLetters(currentLetters);
+            scrambleAndPlaceLetters(currentLetters, true);
+        };
+        
+        const handleRepositionOnly = () => {
+            scrambleAndPlaceLetters(currentLetters, false);
         };
         
         const handleViewportResize = () => {
             appContainer.style.height = `${window.visualViewport.height}px`;
-            setTimeout(handleRescramble, 50);
+            setTimeout(handleRepositionOnly, 50);
         };
 
         appContainer.style.height = `${window.visualViewport ? window.visualViewport.height : window.innerHeight}px`;
@@ -529,7 +472,7 @@
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', handleViewportResize);
         } else {
-            window.addEventListener('resize', handleRescramble);
+            window.addEventListener('resize', handleRepositionOnly);
         }
         if (letterInput.value) handleInput();
 
