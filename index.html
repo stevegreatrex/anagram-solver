@@ -479,16 +479,9 @@
                 if (char === ' ') return;
                 const letterTile = document.createElement('div');
                 
-                // Create the main letter
-                const letterSpan = document.createElement('span');
-                letterSpan.textContent = char.toUpperCase();
-                letterTile.appendChild(letterSpan);
-                
-                // Create the point value
-                const pointSpan = document.createElement('span');
-                pointSpan.className = 'point-value';
-                pointSpan.textContent = scrabblePoints[char.toLowerCase()] || 0;
-                letterTile.appendChild(pointSpan);
+                // Set the main letter content with point value
+                const pointValue = scrabblePoints[char.toLowerCase()] || 0;
+                letterTile.innerHTML = `${char.toUpperCase()}<span class="point-value">${pointValue}</span>`;
                 
                 letterTile.className = 'letter-tile absolute flex items-center justify-center rounded-lg shadow-lg font-semibold select-none cursor-pointer';
                 letterTile.setAttribute('data-letter', char.toLowerCase());
