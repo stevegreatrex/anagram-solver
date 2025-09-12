@@ -552,25 +552,50 @@
         // --- Online API Integration ---
 
         async function findAnagramsWithAPI(letters) {
-            // Start with local algorithm results as base
-            const localResults = findAnagrams(letters);
+            // Try different possible anagrams.io API endpoints
+            const endpoints = [
+                `https://api.anagrams.io/anagrams?letters=${encodeURIComponent(letters)}`,
+                `https://api.anagrams.io/anagrams/${encodeURIComponent(letters)}`,
+                `https://api.anagrams.io/find?word=${encodeURIComponent(letters)}`
+            ];
             
-            // Try to validate some words with dictionary API to confirm it's working
-            if (localResults.length > 0) {
+            for (const endpoint of endpoints) {
                 try {
-                    // Test the first word to see if API is available
-                    const testResponse = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${localResults[0]}`);
-                    if (testResponse.ok) {
-                        // API is working, return the local results as validated
-                        return { text: localResults.join(', '), source: 'online' };
+                    const response = await fetch(endpoint);
+                    
+                    if (!response.ok) {
+                        continue; // Try next endpoint
                     }
+                    
+                    const data = await response.json();
+                    
+                    // Handle different possible response formats
+                    let anagrams = [];
+                    if (Array.isArray(data)) {
+                        anagrams = data;
+                    } else if (data.anagrams && Array.isArray(data.anagrams)) {
+                        anagrams = data.anagrams;
+                    } else if (data.words && Array.isArray(data.words)) {
+                        anagrams = data.words;
+                    } else if (data.results && Array.isArray(data.results)) {
+                        anagrams = data.results;
+                    } else {
+                        continue; // Try next endpoint
+                    }
+                    
+                    if (anagrams.length === 0) {
+                        continue; // Try next endpoint
+                    }
+                    
+                    return { text: anagrams.join(', '), source: 'online' };
                 } catch (e) {
-                    // Dictionary API failed
-                    throw new Error('Dictionary API not available');
+                    // Continue to next endpoint
+                    continue;
                 }
             }
             
-            throw new Error('No results or API unavailable');
+            // If all endpoints failed, throw error to trigger fallback
+            throw new Error('Anagrams.io API not available');
         }
 
         async function findAnagramsLocal(letters) {
