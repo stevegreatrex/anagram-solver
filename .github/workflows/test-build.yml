@@ -1,0 +1,88 @@
+name: Test Static Site Build
+
+# This workflow tests that the static site files are valid
+# and can be deployed successfully
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-static-files:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Validate static files
+        run: |
+          echo "🔍 Validating essential static files..."
+          
+          # Check that all essential files exist
+          for file in index.html sw.js words.js manifest.json robots.txt; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+            echo "✅ Found: $file ($(wc -c < "$file") bytes)"
+          done
+          
+          # Validate JSON files
+          echo "📋 Validating JSON syntax..."
+          python3 -c "
+          import json
+          with open('manifest.json', 'r') as f:
+              manifest = json.load(f)
+          print('✅ manifest.json is valid JSON')
+          print(f'   App: {manifest[\"name\"]}')
+          "
+
+      - name: Test static site serving
+        run: |
+          echo "🌐 Testing static site serving..."
+          
+          # Start a simple HTTP server in background
+          python3 -m http.server 8000 &
+          SERVER_PID=$!
+          
+          # Wait for server to start
+          sleep 3
+          
+          # Test that the site loads
+          if curl -f -s http://localhost:8000/ > /dev/null; then
+            echo "✅ Static site serves correctly"
+          else
+            echo "❌ Failed to serve static site"
+            kill $SERVER_PID
+            exit 1
+          fi
+          
+          # Test PWA manifest
+          if curl -f -s http://localhost:8000/manifest.json > /dev/null; then
+            echo "✅ PWA manifest serves correctly"
+          else
+            echo "❌ Failed to serve PWA manifest"
+            kill $SERVER_PID
+            exit 1
+          fi
+          
+          # Test service worker
+          if curl -f -s http://localhost:8000/sw.js > /dev/null; then
+            echo "✅ Service worker serves correctly"
+          else
+            echo "❌ Failed to serve service worker"
+            kill $SERVER_PID
+            exit 1
+          fi
+          
+          # Clean up
+          kill $SERVER_PID
+          echo "🎉 All tests passed!"
