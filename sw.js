@@ -1,111 +1,81 @@
-const CACHE_NAME = "anagram-solver-v4";
-const urlsToCache = [
-  "./",
+const CACHE_NAME = "anagram-solver-v5";
+const ASSETS = [
+  // Precache only the assets you need for offline. You can include index.html
+  // so you have an offline fallback, but DO NOT serve it cache-first for navigations.
   "./index.html",
   "./words.js",
   "./manifest.json",
   "./robots.txt",
-  // Add fallback for offline
-  "./sw.js",
 ];
 
-// Install event - cache resources
+// Install: precache assets and activate immediately
 self.addEventListener("install", (event) => {
-  console.log("Service Worker installing...");
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => {
-        console.log("Opened cache");
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => {
-        console.log("All resources cached");
-        // Take control immediately
-        return self.skipWaiting();
-      })
+      .then((cache) => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
-// Fetch event - serve from cache when offline with improved strategy
-self.addEventListener("fetch", (event) => {
-  // Only handle same-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
-
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Return cached version if available
-      if (response) {
-        console.log("Serving from cache:", event.request.url);
-        return response;
-      }
-
-      // Fetch from network and cache the response
-      return fetch(event.request)
-        .then((response) => {
-          // Don't cache non-successful responses
-          if (
-            !response ||
-            response.status !== 200 ||
-            response.type !== "basic"
-          ) {
-            return response;
-          }
-
-          // Clone the response as it can only be consumed once
-          const responseToCache = response.clone();
-
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-
-          return response;
-        })
-        .catch(() => {
-          // Return offline page for navigation requests
-          if (event.request.mode === "navigate") {
-            return caches.match("./index.html");
-          }
-          throw error;
-        });
-    })
-  );
-});
-
-// Activate event - clean up old caches
+// Activate: clean old caches and take control
 self.addEventListener("activate", (event) => {
-  console.log("Service Worker activating...");
   event.waitUntil(
     caches
       .keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME) {
-              console.log("Deleting old cache:", cacheName);
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
-      .then(() => {
-        console.log("Service Worker activated");
-        // Take control of all open clients
-        return self.clients.claim();
-      })
+      .then((names) =>
+        Promise.all(names.map((n) => (n !== CACHE_NAME ? caches.delete(n) : undefined)))
+      )
+      .then(() => self.clients.claim())
   );
 });
 
-// Background sync for better offline experience (if supported)
-self.addEventListener("sync", (event) => {
-  console.log("Background sync event:", event.tag);
-  // Could be used for syncing data when back online
+// Fetch: network-first for navigations; SWR for other same-origin GETs
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+
+  // Only same-origin GET requests
+  if (req.method !== "GET" || !req.url.startsWith(self.location.origin)) return;
+
+  // Network-first for navigations (HTML documents)
+  if (req.mode === "navigate" || req.destination === "document") {
+    event.respondWith(networkFirst(req));
+    return;
+  }
+
+  // Stale-while-revalidate for scripts/styles/images/fonts
+  if (["script", "style", "image", "font"].includes(req.destination)) {
+    event.respondWith(staleWhileRevalidate(req));
+    return;
+  }
+
+  // Default: try cache, fall back to network
+  event.respondWith(caches.match(req).then((cached) => cached || fetch(req)));
 });
 
-// Push notifications support (for future enhancements)
-self.addEventListener("push", (event) => {
-  console.log("Push event received");
-  // Could be used for notifications about new features
-});
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request);
+    const cache = await caches.open(CACHE_NAME);
+    cache.put(request, response.clone());
+    return response;
+  } catch (e) {
+    // Offline: serve cached request or fallback to index.html for navigations
+    return (await caches.match(request)) || (await caches.match("./index.html"));
+  }
+}
+
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+  const networkPromise = fetch(request)
+    .then((response) => {
+      if (response && response.status === 200 && response.type === "basic") {
+        cache.put(request, response.clone());
+      }
+      return response;
+    })
+    .catch(() => undefined);
+
+  return cached || networkPromise || fetch(request);
+}
