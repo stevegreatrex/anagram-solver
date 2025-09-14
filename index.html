@@ -499,23 +499,112 @@
             'q': 10, 'z': 10
         };
 
+        // Letter Tile Web Component
+        class LetterTile extends HTMLElement {
+            constructor() {
+                super();
+                this._letter = '';
+                this._pointValue = 0;
+                this._isDimmed = false;
+            }
+
+            static get observedAttributes() {
+                return ['letter', 'tile-size', 'font-size', 'position-x', 'position-y'];
+            }
+
+            connectedCallback() {
+                this.render();
+                this.addEventListener('click', this.handleClick.bind(this));
+            }
+
+            disconnectedCallback() {
+                this.removeEventListener('click', this.handleClick);
+            }
+
+            attributeChangedCallback(name, oldValue, newValue) {
+                if (oldValue !== newValue) {
+                    this.render();
+                }
+            }
+
+            get letter() {
+                return this.getAttribute('letter') || '';
+            }
+
+            set letter(value) {
+                this.setAttribute('letter', value);
+            }
+
+            get tileSize() {
+                return parseInt(this.getAttribute('tile-size')) || 50;
+            }
+
+            set tileSize(value) {
+                this.setAttribute('tile-size', value);
+            }
+
+            get fontSize() {
+                return parseInt(this.getAttribute('font-size')) || 30;
+            }
+
+            set fontSize(value) {
+                this.setAttribute('font-size', value);
+            }
+
+            get positionX() {
+                return parseInt(this.getAttribute('position-x')) || 0;
+            }
+
+            set positionX(value) {
+                this.setAttribute('position-x', value);
+            }
+
+            get positionY() {
+                return parseInt(this.getAttribute('position-y')) || 0;
+            }
+
+            set positionY(value) {
+                this.setAttribute('position-y', value);
+            }
+
+            handleClick() {
+                this._isDimmed = !this._isDimmed;
+                this.classList.toggle('dimmed', this._isDimmed);
+            }
+
+            render() {
+                const letter = this.letter.toLowerCase();
+                const pointValue = scrabblePoints[letter] || 0;
+                
+                this.innerHTML = `${letter.toUpperCase()}<span class="point-value">${pointValue}</span>`;
+                this.className = 'letter-tile absolute flex items-center justify-center rounded-lg shadow-lg font-semibold select-none cursor-pointer';
+                this.setAttribute('data-letter', letter);
+                
+                this.style.width = `${this.tileSize}px`;
+                this.style.height = `${this.tileSize}px`;
+                this.style.fontSize = `${this.fontSize}px`;
+                this.style.left = `${this.positionX}px`;
+                this.style.top = `${this.positionY}px`;
+                
+                // Maintain dimmed state after re-render
+                this.classList.toggle('dimmed', this._isDimmed);
+            }
+        }
+
+        // Register the custom element
+        customElements.define('letter-tile', LetterTile);
+
         const renderLetters = (positions, tileSize, fontSize, renderOrder) => {
             renderOrder.forEach((char, index) => {
                 if (char === ' ') return;
-                const letterTile = document.createElement('div');
+                const letterTile = document.createElement('letter-tile');
                 
-                // Set the main letter content with point value
-                const pointValue = scrabblePoints[char.toLowerCase()] || 0;
-                letterTile.innerHTML = `${char.toUpperCase()}<span class="point-value">${pointValue}</span>`;
+                letterTile.letter = char.toLowerCase();
+                letterTile.tileSize = tileSize;
+                letterTile.fontSize = fontSize;
+                letterTile.positionX = positions[index].x;
+                letterTile.positionY = positions[index].y;
                 
-                letterTile.className = 'letter-tile absolute flex items-center justify-center rounded-lg shadow-lg font-semibold select-none cursor-pointer';
-                letterTile.setAttribute('data-letter', char.toLowerCase());
-                letterTile.style.width = `${tileSize}px`;
-                letterTile.style.height = `${tileSize}px`;
-                letterTile.style.fontSize = `${fontSize}px`;
-                letterTile.style.left = `${positions[index].x}px`;
-                letterTile.style.top = `${positions[index].y}px`;
-                letterTile.addEventListener('click', () => { letterTile.classList.toggle('dimmed'); });
                 letterContainer.appendChild(letterTile);
             });
         };
