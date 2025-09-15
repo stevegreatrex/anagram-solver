@@ -11,20 +11,6 @@ This repository includes GitHub Actions workflows to automatically deploy previe
 - ✅ Free for open source
 - ✅ Built-in GitHub integration
 
-### Option 2: Vercel
-**File**: `.github/workflows/pr-preview-vercel.yml.example`
-- ✅ Fast global CDN
-- ✅ Great performance
-- ✅ Good free tier
-
-### Option 3: Surge.sh  
-**File**: `.github/workflows/pr-preview-surge.yml.example`
-- ✅ Simplest setup
-- ✅ Minimal configuration
-- ✅ Completely free
-
-## Setup Instructions
-
 ### For Netlify (Default Option)
 
 #### Required GitHub Secrets:
@@ -41,27 +27,6 @@ This repository includes GitHub Actions workflows to automatically deploy previe
 - Go to Site Settings → General → Site details
 - Copy the "Site ID" (looks like: `abc12345-def6-7890-ghij-klmnopqrstuv`)
 - Add it as a secret named `NETLIFY_SITE_ID`
-
-### For Vercel (Alternative Option)
-
-To use Vercel instead:
-1. Rename `pr-preview-vercel.yml.example` to `pr-preview.yml`
-2. Rename the default `pr-preview.yml` to `pr-preview-netlify.yml.disabled`
-
-#### Required GitHub Secrets:
-- `VERCEL_TOKEN` - Create at [Vercel Tokens](https://vercel.com/account/tokens)
-- `VERCEL_ORG_ID` - Found in Vercel team settings  
-- `VERCEL_PROJECT_ID` - Create a new Vercel project and get the ID
-
-### For Surge.sh (Minimal Option)
-
-To use Surge.sh instead:
-1. Rename `pr-preview-surge.yml.example` to `pr-preview.yml`
-2. Rename the default `pr-preview.yml` to `pr-preview-netlify.yml.disabled`
-
-#### Required GitHub Secrets:
-- `SURGE_LOGIN` - Your Surge.sh email address
-- `SURGE_TOKEN` - Generate with `surge token` command
 
 ## How to Add Secrets to GitHub
 
