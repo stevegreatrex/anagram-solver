@@ -368,6 +368,7 @@
     </div>
 
     <script src="words.js"></script>
+    <script src="letter-tile.js"></script>
     <script>
         const letterInput = document.getElementById('letterInput');
         const repositionButton = document.getElementById('repositionButton');
@@ -488,34 +489,21 @@
             return { positions, tileSize };
         };
 
-        // Scrabble point values for each letter
-        const scrabblePoints = {
-            'a': 1, 'e': 1, 'i': 1, 'o': 1, 'u': 1, 'l': 1, 'n': 1, 's': 1, 't': 1, 'r': 1,
-            'd': 2, 'g': 2,
-            'b': 3, 'c': 3, 'm': 3, 'p': 3,
-            'f': 4, 'h': 4, 'v': 4, 'w': 4, 'y': 4,
-            'k': 5,
-            'j': 8, 'x': 8,
-            'q': 10, 'z': 10
-        };
+        // Scrabble point values moved to LetterTile class
+
+        // LetterTile component moved to letter-tile.js
 
         const renderLetters = (positions, tileSize, fontSize, renderOrder) => {
             renderOrder.forEach((char, index) => {
                 if (char === ' ') return;
-                const letterTile = document.createElement('div');
+                const letterTile = document.createElement('letter-tile');
                 
-                // Set the main letter content with point value
-                const pointValue = scrabblePoints[char.toLowerCase()] || 0;
-                letterTile.innerHTML = `${char.toUpperCase()}<span class="point-value">${pointValue}</span>`;
+                letterTile.letter = char.toLowerCase();
+                letterTile.tileSize = tileSize;
+                letterTile.fontSize = fontSize;
+                letterTile.positionX = positions[index].x;
+                letterTile.positionY = positions[index].y;
                 
-                letterTile.className = 'letter-tile absolute flex items-center justify-center rounded-lg shadow-lg font-semibold select-none cursor-pointer';
-                letterTile.setAttribute('data-letter', char.toLowerCase());
-                letterTile.style.width = `${tileSize}px`;
-                letterTile.style.height = `${tileSize}px`;
-                letterTile.style.fontSize = `${fontSize}px`;
-                letterTile.style.left = `${positions[index].x}px`;
-                letterTile.style.top = `${positions[index].y}px`;
-                letterTile.addEventListener('click', () => { letterTile.classList.toggle('dimmed'); });
                 letterContainer.appendChild(letterTile);
             });
         };

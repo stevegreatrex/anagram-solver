@@ -1,9 +1,10 @@
-const CACHE_NAME = "anagram-solver-v5";
+const CACHE_NAME = "anagram-solver-v6";
 const ASSETS = [
   // Precache only the assets you need for offline. You can include index.html
   // so you have an offline fallback, but DO NOT serve it cache-first for navigations.
   "./index.html",
   "./words.js",
+  "./letter-tile.js",
   "./manifest.json",
   "./robots.txt",
 ];
