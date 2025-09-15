@@ -82,12 +82,13 @@ async function staleWhileRevalidate(request) {
   const cached = await cache.match(request);
   const networkPromise = fetch(request)
     .then((response) => {
-      if (
-        response &&
-        response.status === 200 &&
-        (response.type === "basic" || response.type === "opaque")
-      ) {
-        cache.put(request, response.clone());
+      if (response) {
+        const isOpaque = response.type === "opaque"; // cross-origin, status will be 0
+        const isCacheableBasic =
+          response.type === "basic" && response.status === 200;
+        if (isOpaque || isCacheableBasic) {
+          cache.put(request, response.clone());
+        }
       }
       return response;
     })
