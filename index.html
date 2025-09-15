@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Anagram Solver</title>
+    <!-- Tailwind CSS (full framework via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="./manifest.json">
@@ -35,171 +37,25 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iNCIgZmlsbD0iIzNiODJmNiIvPgo8cGF0aCBkPSJtMTIgNSAzLjA5IDYuMjZMMjEgMTJsLTUuOTEgMS43NEwxMiAxOWwtMy4wOS02LjI2TDMgMTJsNS45MS0xLjc0TDEyIDV6IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4=">
     <style>
-        /* Reset and base styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        html {
-            height: 100%;
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-        }
-        
+        /* Minimal custom styles; Tailwind provides utilities */
         body {
-            font-family: math, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            overscroll-behavior-y: contain;
-            overflow: hidden;
-            background-color: #f3f4f6;
-            color: #111827;
-            line-height: 1.5;
             height: 100%;
             position: fixed;
             width: 100%;
             top: 0;
             left: 0;
+            overflow: hidden;
         }
-        
-        /* Dark mode */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background-color: #111827;
-                color: #f9fafb;
-            }
-            
-            .bg-white { background-color: #1f2937 !important; }
-            .bg-gray-100 { background-color: #111827 !important; }
-            .bg-gray-800 { background-color: #1f2937 !important; }
-            .bg-blue-50 { background-color: #1e40af !important; }
-            .bg-blue-900 { background-color: #1e40af !important; }
-            .text-gray-900 { color: #f9fafb !important; }
-            .text-gray-800 { color: #f3f4f6 !important; }
-            .text-gray-700 { color: #d1d5db !important; }
-            .text-gray-600 { color: #9ca3af !important; }
-            .text-gray-500 { color: #6b7280 !important; }
-            .text-gray-400 { color: #9ca3af !important; }
-            .text-gray-200 { color: #e5e7eb !important; }
-            .text-blue-900 { color: #ffffff !important; }
-            .text-blue-100 { color: #ffffff !important; }
-            .border-gray-200 { border-color: #374151 !important; }
-            .border-gray-300 { border-color: #374151 !important; }
-            .border-gray-600 { border-color: #4b5563 !important; }
-            .border-blue-200 { border-color: #1e40af !important; }
-            .border-blue-700 { border-color: #1e40af !important; }
-            .hover\\:bg-gray-100:hover { background-color: #374151 !important; }
-            .hover\\:bg-gray-200:hover { background-color: #374151 !important; }
-        }
-        
-        /* Layout utilities */
-        .w-full { width: 100%; }
-        .h-full { height: 100%; }
-        .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .flex-grow { flex-grow: 1; }
-        .flex-shrink-0 { flex-shrink: 0; }
-        .items-center { align-items: center; }
-        .items-end { align-items: flex-end; }
-        .justify-center { justify-content: center; }
-        .justify-between { justify-content: space-between; }
-        .gap-2 { gap: 0.5rem; }
-        .gap-3 { gap: 0.75rem; }
-        .relative { position: relative; }
-        .absolute { position: absolute; }
-        .fixed { position: fixed; }
-        .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-        
-        /* Spacing */
-        .p-3 { padding: 0.75rem; }
-        .p-4 { padding: 1rem; }
-        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
-        .px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
-        .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
-        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-        .mt-4 { margin-top: 1rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        
-        /* Colors */
-        .bg-white { background-color: #ffffff; }
-        .bg-gray-100 { background-color: #f3f4f6; }
-        .bg-gray-800 { background-color: #1f2937; }
-        .bg-blue-50 { background-color: #eff6ff; }
-        .bg-blue-500 { background-color: #3b82f6; }
-        .bg-blue-600 { background-color: #2563eb; }
-        .bg-blue-900 { background-color: #1e3a8a; }
-        .bg-black { background-color: #000000; }
-        .text-white { color: #ffffff; }
-        .text-blue-100 { color: #dbeafe; }
-        .text-blue-900 { color: #1e3a8a; }
-        .text-gray-500 { color: #6b7280; }
-        .text-gray-600 { color: #4b5563; }
-        .text-gray-700 { color: #374151; }
-        .text-gray-800 { color: #1f2937; }
-        .text-gray-900 { color: #111827; }
-        .text-red-500 { color: #ef4444; }
-        .text-lg { font-size: 1.125rem; }
-        .text-xl { font-size: 1.25rem; }
-        .font-bold { font-weight: 700; }
-        .font-semibold { font-weight: 600; }
-        .font-medium { font-weight: 500; }
-        
-        /* Placeholder colors */
-        .placeholder-gray-500::placeholder { color: #6b7280; }
-        .placeholder-gray-400::placeholder { color: #9ca3af; }
-        
-        /* Borders and shadows */
-        .border { border-width: 1px; }
-        .border-2 { border-width: 2px; }
-        .border-transparent { border-color: transparent; }
-        .border-gray-200 { border-color: #e5e7eb; }
-        .border-gray-600 { border-color: #4b5563; }
-        .border-blue-200 { border-color: #c3ddfd; }
-        .border-blue-700 { border-color: #1d4ed8; }
-        .rounded-md { border-radius: 0.375rem; }
-        .rounded-lg { border-radius: 0.5rem; }
-        .rounded-xl { border-radius: 0.75rem; }
-        .rounded-2xl { border-radius: 1rem; }
-        .rounded-t-2xl { border-top-left-radius: 1rem; border-top-right-radius: 1rem; }
-        .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
-        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
-        .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
-        .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
-        
-        /* Interactive states */
-        .hover:bg-blue-700:hover { background-color: #1d4ed8; }
-        .hover:bg-gray-100:hover { background-color: #f3f4f6; }
-        .hover:bg-gray-200:hover { background-color: #e5e7eb; }
-        .hover:text-gray-800:hover { color: #1f2937; }
-        .hover:scale-105:hover { transform: scale(1.05); }
-        .hover:scale-110:hover { transform: scale(1.1); }
-        .hover:shadow-xl:hover { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
-        .hover:shadow-2xl:hover { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
-        .active:scale-95:active { transform: scale(0.95); }
-        .focus:ring-4:focus { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3); }
-        .focus:border-blue-500:focus { border-color: #3b82f6; }
-        .outline-none { outline: none; }
-        .cursor-pointer { cursor: pointer; }
-        .select-none { user-select: none; }
-        
-        /* Display utilities */
-        .hidden { display: none; }
-        .overflow-hidden { overflow: hidden; }
-        .overflow-y-auto { overflow-y: auto; }
-        
-        /* Z-index */
-        .z-50 { z-index: 50; }
-        
-        /* Custom styles */
+
+        /* Letter tile visuals */
         .letter-tile {
+            font-family: math;
             transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
             background-color: #f5f5dc;
             color: #2d3748;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
             border: 1px solid #d2b48c;
         }
-        
         .letter-tile .point-value {
             position: absolute;
             bottom: 2px;
@@ -208,11 +64,9 @@
             font-weight: bold;
             color: #2d3748;
         }
-        
-        .letter-tile.dimmed {
-            opacity: 0.3;
-        }
-        
+        .letter-tile.dimmed { opacity: 0.3; }
+
+        /* App container behavior */
         #appContainer {
             transition: height 0.2s ease-in-out;
             position: fixed;
@@ -222,20 +76,13 @@
             bottom: 0;
             overflow: hidden;
         }
-        
-        #resultsModal.hidden {
-            display: none;
-        }
-        
-        .modal-content {
-            transform: translateY(100%);
-            transition: transform 0.3s ease-out;
-        }
-        
-        #resultsModal:not(.hidden) .modal-content {
-            transform: translateY(0);
-        }
-        
+
+        /* Modal transitions */
+        #resultsModal.hidden { display: none; }
+        .modal-content { transform: translateY(100%); transition: transform 0.3s ease-out; }
+        #resultsModal:not(.hidden) .modal-content { transform: translateY(0); }
+
+        /* Loader */
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #3498db;
@@ -244,35 +91,19 @@
             height: 40px;
             animation: spin 1s linear infinite;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes slideDown {
-            0% { transform: translateY(-100%); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
-        }
-        
-        /* Additional responsive utilities */
-        .max-h-50vh { max-height: 50vh; }
-        .flex-wrap { flex-wrap: wrap; }
-        .h-32 { height: 8rem; }
-        .h-6 { height: 1.5rem; }
-        .w-6 { width: 1.5rem; }
-        .bg-opacity-50 { background-color: rgba(0, 0, 0, 0.5); }
-        
-        /* Button transition effects */
-        .transition { transition: all 0.3s ease; }
-        .transform { transform: translateZ(0); }
-        
-        /* Spinning animation for loading indicators */
-        .animate-spin {
-            animation: spin 1s linear infinite;
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes slideDown { 0% { transform: translateY(-100%); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 
-        /* Mobile spacing reductions to maximize letter area */
+        /* Helpers not in Tailwind by default */
+        .max-h-50vh { max-height: 50vh; }
+        .menu-item { border-radius: 0.5rem; }
+        .menu-item:hover { background-color: #f3f4f6; }
+        @media (prefers-color-scheme: dark) { .menu-item:hover { background-color: #374151; } }
+        .menu-icon { background: #f3f4f6; border-radius: 0.375rem; display: inline-flex; }
+        .menu-icon svg { display: block; }
+        @media (prefers-color-scheme: dark) { .menu-icon { background: #374151; } }
+
+        /* Mobile spacing tweak */
         @media (max-width: 480px) {
             .p-4 { padding: 0.5rem; }
             .mt-4 { margin-top: 0.5rem; }
@@ -325,22 +156,33 @@
                         </svg>
                     </button>
                     
-                    <!-- Dropdown menu -->
-                    <div id="dropdownMenu" class="hidden absolute right-0 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl z-50">
-                        <div class="py-2">
-                            <button id="findAnagramsButton" class="w-full px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors duration-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <!-- Popup menu (opens above, right-aligned) -->
+                    <div id="dropdownMenu" class="hidden absolute bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl z-50"
+                         style="right:0; bottom: calc(100% + 8px); min-width: 15rem;">
+                        <button id="findAnagramsButton" class="menu-item w-full px-4 py-3 text-left text-lg text-gray-700 dark:text-gray-300 flex items-center gap-3 transition-colors duration-200">
+                            <span class="menu-icon p-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                                 </svg>
-                                Find Anagrams
-                            </button>
-                            <button id="updateCheckButton" class="w-full px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors duration-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            </span>
+                            Find Anagrams
+                        </button>
+                        <button id="updateCheckButton" class="menu-item w-full px-4 py-3 text-left text-lg text-gray-700 dark:text-gray-300 flex items-center gap-3 transition-colors duration-200">
+                            <span class="menu-icon p-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
-                                Check for Updates
-                            </button>
-                        </div>
+                            </span>
+                            Check for Updates
+                        </button>
+                        <button id="installAppButton" class="menu-item w-full px-4 py-3 text-left text-lg text-gray-700 dark:text-gray-300 flex items-center gap-3 transition-colors duration-200 hidden">
+                            <span class="menu-icon p-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </span>
+                            Install App
+                        </button>
                     </div>
                 </div>
             </div>
@@ -553,26 +395,6 @@
 
         const toggleDropdown = () => {
             if (dropdownMenu.classList.contains('hidden')) {
-                // Calculate available space above and below the button
-                const buttonRect = menuButton.getBoundingClientRect();
-                const viewportHeight = window.innerHeight;
-                const menuHeight = 120; // Approximate height of dropdown menu
-                
-                const spaceAbove = buttonRect.top;
-                const spaceBelow = viewportHeight - buttonRect.bottom;
-                
-                // Remove existing positioning classes
-                dropdownMenu.classList.remove('bottom-full', 'mb-2', 'top-full', 'mt-2');
-                
-                // Position menu based on available space
-                if (spaceAbove >= menuHeight) {
-                    // Enough space above - open upward
-                    dropdownMenu.classList.add('bottom-full', 'mb-2');
-                } else {
-                    // Not enough space above - open downward
-                    dropdownMenu.classList.add('top-full', 'mt-2');
-                }
-                
                 dropdownMenu.classList.remove('hidden');
             } else {
                 dropdownMenu.classList.add('hidden');
@@ -758,50 +580,16 @@
         });
 
         function showInstallPrompt() {
-            // Create install button if it doesn't exist
-            let installButton = document.getElementById('installButton');
-            if (!installButton) {
-                installButton = document.createElement('button');
-                installButton.id = 'installButton';
-                installButton.innerHTML = '📱 Install App';
-                installButton.className = 'install-button bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-300';
-                installButton.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    z-index: 1000;
-                    border: none;
-                    cursor: pointer;
-                    font-size: 18px;
-                    min-height: 48px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                `;
-                
-                installButton.addEventListener('click', async () => {
-                    if (deferredPrompt) {
-                        // Show the install prompt
-                        deferredPrompt.prompt();
-                        // Wait for the user to respond to the prompt
-                        const { outcome } = await deferredPrompt.userChoice;
-                        console.log(`User response to the install prompt: ${outcome}`);
-                        // Clear the deferredPrompt variable
-                        deferredPrompt = null;
-                        // Hide the install button
-                        hideInstallPrompt();
-                    }
-                });
-                
-                document.body.appendChild(installButton);
+            const installMenuBtn = document.getElementById('installAppButton');
+            if (installMenuBtn) {
+                installMenuBtn.classList.remove('hidden');
             }
-            installButton.style.display = 'block';
         }
 
         function hideInstallPrompt() {
-            const installButton = document.getElementById('installButton');
-            if (installButton) {
-                installButton.style.display = 'none';
+            const installMenuBtn = document.getElementById('installAppButton');
+            if (installMenuBtn) {
+                installMenuBtn.classList.add('hidden');
             }
         }
 
@@ -1020,6 +808,19 @@
             const updateCheckButton = document.getElementById('updateCheckButton');
             if (updateCheckButton) {
                 updateCheckButton.addEventListener('click', checkForUpdates);
+            }
+            const installMenuBtn = document.getElementById('installAppButton');
+            if (installMenuBtn) {
+                installMenuBtn.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        closeDropdown();
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log(`User response to the install prompt: ${outcome}`);
+                        deferredPrompt = null;
+                        hideInstallPrompt();
+                    }
+                });
             }
         });
 

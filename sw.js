@@ -1,4 +1,5 @@
-const CACHE_NAME = "anagram-solver-v6";
+const CACHE_NAME = "anagram-solver-v7";
+const TAILWIND_CDN = "https://cdn.tailwindcss.com";
 const ASSETS = [
   // Precache only the assets you need for offline. You can include index.html
   // so you have an offline fallback, but DO NOT serve it cache-first for navigations.
@@ -25,7 +26,9 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((names) =>
-        Promise.all(names.map((n) => (n !== CACHE_NAME ? caches.delete(n) : undefined)))
+        Promise.all(
+          names.map((n) => (n !== CACHE_NAME ? caches.delete(n) : undefined))
+        )
       )
       .then(() => self.clients.claim())
   );
@@ -35,7 +38,13 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
 
-  // Only same-origin GET requests
+  // Always allow caching of Tailwind CDN for offline
+  if (req.method === "GET" && req.url.startsWith(TAILWIND_CDN)) {
+    event.respondWith(staleWhileRevalidate(req));
+    return;
+  }
+
+  // Only same-origin GET requests beyond this point
   if (req.method !== "GET" || !req.url.startsWith(self.location.origin)) return;
 
   // Network-first for navigations (HTML documents)
@@ -62,7 +71,9 @@ async function networkFirst(request) {
     return response;
   } catch (e) {
     // Offline: serve cached request or fallback to index.html for navigations
-    return (await caches.match(request)) || (await caches.match("./index.html"));
+    return (
+      (await caches.match(request)) || (await caches.match("./index.html"))
+    );
   }
 }
 
@@ -71,8 +82,13 @@ async function staleWhileRevalidate(request) {
   const cached = await cache.match(request);
   const networkPromise = fetch(request)
     .then((response) => {
-      if (response && response.status === 200 && response.type === "basic") {
-        cache.put(request, response.clone());
+      if (response) {
+        const isOpaque = response.type === "opaque"; // cross-origin, status will be 0
+        const isCacheableBasic =
+          response.type === "basic" && response.status === 200;
+        if (isOpaque || isCacheableBasic) {
+          cache.put(request, response.clone());
+        }
       }
       return response;
     })
