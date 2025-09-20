@@ -495,16 +495,6 @@
         const displayResults = (result) => {
             resultsContent.innerHTML = '';
             
-            // Add source indicator
-            const sourceEl = document.createElement('div');
-            sourceEl.className = 'mb-3 text-sm text-gray-800 dark:text-gray-200 font-medium';
-            if (result.source === 'online') {
-                sourceEl.innerHTML = '🌐';
-            } else {
-                sourceEl.innerHTML = '📱';
-            }
-            resultsContent.appendChild(sourceEl);
-            
             const text = result.text;
             if (!text || text.trim() === '') {
                  const noResultsEl = document.createElement('p');
@@ -514,15 +504,58 @@
                  return;
             }
             
+            // Check if the text is a "no results" message
+            if (text.toLowerCase().includes('no anagrams found') || text.toLowerCase().includes('no words found')) {
+                const noResultsEl = document.createElement('p');
+                noResultsEl.className = 'text-gray-500 dark:text-gray-400';
+                noResultsEl.textContent = 'No anagrams found.';
+                resultsContent.appendChild(noResultsEl);
+                return;
+            }
+            
             const words = text.split(',').map(word => word.trim().toLowerCase()).filter(Boolean);
             const uniqueWords = [...new Set(words)];
-            uniqueWords.sort((a,b) => b.length - a.length || a.localeCompare(b));
             
+            // Group words by length
+            const wordsByLength = {};
             uniqueWords.forEach(word => {
-                const wordEl = document.createElement('div');
-                wordEl.textContent = word;
-                wordEl.className = 'bg-blue-50 dark:bg-blue-900 text-blue-900 dark:text-blue-100 px-4 py-2 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700 font-medium';
-                resultsContent.appendChild(wordEl);
+                const length = word.length;
+                if (!wordsByLength[length]) {
+                    wordsByLength[length] = [];
+                }
+                wordsByLength[length].push(word);
+            });
+            
+            // Sort lengths in descending order
+            const lengths = Object.keys(wordsByLength).map(Number).sort((a, b) => b - a);
+            
+            // Display each length group
+            lengths.forEach(length => {
+                // Create length header
+                const lengthHeader = document.createElement('h3');
+                lengthHeader.className = 'text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 mt-4';
+                lengthHeader.textContent = `${length} Letters`;
+                if (length === lengths[0]) {
+                    lengthHeader.className = 'text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2'; // Remove top margin for first section
+                }
+                resultsContent.appendChild(lengthHeader);
+                
+                // Create container for words of this length
+                const wordsContainer = document.createElement('div');
+                wordsContainer.className = 'flex flex-wrap gap-2 mb-4';
+                
+                // Sort words alphabetically within each length group
+                const sortedWords = wordsByLength[length].sort((a, b) => a.localeCompare(b));
+                
+                // Add each word
+                sortedWords.forEach(word => {
+                    const wordEl = document.createElement('div');
+                    wordEl.textContent = word;
+                    wordEl.className = 'bg-blue-50 dark:bg-blue-900 text-blue-900 dark:text-blue-100 px-4 py-2 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700 font-medium';
+                    wordsContainer.appendChild(wordEl);
+                });
+                
+                resultsContent.appendChild(wordsContainer);
             });
         };
 
