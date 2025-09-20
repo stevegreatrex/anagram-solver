@@ -533,10 +533,10 @@
             lengths.forEach(length => {
                 // Create length header
                 const lengthHeader = document.createElement('h3');
-                lengthHeader.className = 'text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 mt-4';
+                lengthHeader.className = 'text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 mt-3';
                 lengthHeader.textContent = `${length} Letters`;
                 if (length === lengths[0]) {
-                    lengthHeader.className = 'text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2'; // Remove top margin for first section
+                    lengthHeader.className = 'text-sm font-medium text-gray-600 dark:text-gray-400 mb-1'; // Remove top margin for first section
                 }
                 resultsContent.appendChild(lengthHeader);
                 
