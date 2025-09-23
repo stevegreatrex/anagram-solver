@@ -1,4 +1,4 @@
-const CACHE_NAME = "anagram-solver-v7";
+const CACHE_NAME = "anagram-solver-v8";
 const TAILWIND_CDN = "https://cdn.tailwindcss.com";
 const ASSETS = [
   // Precache only the assets you need for offline. You can include index.html
