@@ -133,7 +133,8 @@
 
             <div class="flex items-center gap-3 mt-4">
                 <div class="relative flex-grow">
-                    <input type="text" id="letterInput" placeholder="Type letters here..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="w-full px-5 py-3 pr-12 text-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-2 border-transparent rounded-xl shadow-lg focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition duration-300 placeholder-gray-500 dark:placeholder-gray-400">
+                    <input type="text" id="letterInput" placeholder="Type letters here..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="w-full px-5 py-3 pr-20 text-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 border-2 border-transparent rounded-xl shadow-lg focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition duration-300 placeholder-gray-500 dark:placeholder-gray-400">
+                    <span id="letterCount" class="hidden absolute right-10 top-1/2 transform -translate-y-1/2 text-sm font-medium text-gray-400 dark:text-gray-500 select-none pointer-events-none"></span>
                     <button id="clearButton" class="hidden absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg transition-colors duration-200">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -222,6 +223,7 @@
         const resultsContent = document.getElementById('resultsContent');
         const loader = document.getElementById('loader');
         const clearButton = document.getElementById('clearButton');
+        const letterCount = document.getElementById('letterCount');
         const menuButton = document.getElementById('menuButton');
         const dropdownMenu = document.getElementById('dropdownMenu');
 
@@ -378,11 +380,14 @@
             currentLetters = letterInput.value.replace(/\s/g, '');
             scrambleAndPlaceLetters(currentLetters, true);
             
-            // Show/hide clear button based on input content
+            // Show/hide clear button and letter count based on input content
             if (currentLetters.length > 0) {
                 clearButton.classList.remove('hidden');
+                letterCount.textContent = currentLetters.length;
+                letterCount.classList.remove('hidden');
             } else {
                 clearButton.classList.add('hidden');
+                letterCount.classList.add('hidden');
             }
         };
 
@@ -391,6 +396,7 @@
             currentLetters = '';
             letterContainer.innerHTML = '';
             clearButton.classList.add('hidden');
+            letterCount.classList.add('hidden');
             letterInput.focus();
         };
 
