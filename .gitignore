@@ -6,6 +6,8 @@
 
 # Node modules (if any)
 node_modules/
+.worktrees/
+.superpowers/
 
 # OS generated files
 .DS_Store
