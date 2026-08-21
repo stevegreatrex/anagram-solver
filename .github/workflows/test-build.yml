@@ -27,7 +27,10 @@ jobs:
           echo "🔍 Validating essential static files..."
           
           # Check that all essential files exist
-          for file in index.html sw.js words.js manifest.json robots.txt; do
+          for file in index.html sw.js words.js manifest.json robots.txt \
+            icons/icon-192.png icons/icon-512.png \
+            icons/maskable-192.png icons/maskable-512.png \
+            icons/apple-touch-icon.png icons/favicon-32.png; do
             if [ ! -f "$file" ]; then
               echo "❌ Missing required file: $file"
               exit 1
@@ -43,7 +46,38 @@ jobs:
               manifest = json.load(f)
           print('✅ manifest.json is valid JSON')
           print(f'   App: {manifest[\"name\"]}')
+          assert manifest['display'] == 'standalone'
+          assert manifest['start_url'] == '/'
+          assert manifest['scope'] == '/'
+          assert manifest.get('prefer_related_applications') is False
+          assert all(not icon['src'].startswith('data:') for icon in manifest['icons'])
+          icon_sizes = {(icon['sizes'], icon.get('purpose', 'any')) for icon in manifest['icons']}
+          assert ('192x192', 'any') in icon_sizes
+          assert ('512x512', 'any') in icon_sizes
+          assert ('192x192', 'maskable') in icon_sizes
+          assert ('512x512', 'maskable') in icon_sizes
           "
+
+          # Verify the declared raster dimensions from each PNG IHDR chunk.
+          python3 - <<'PY'
+          import struct
+
+          expected = {
+              'icons/icon-192.png': (192, 192),
+              'icons/icon-512.png': (512, 512),
+              'icons/maskable-192.png': (192, 192),
+              'icons/maskable-512.png': (512, 512),
+              'icons/apple-touch-icon.png': (180, 180),
+              'icons/favicon-32.png': (32, 32),
+          }
+          for path, dimensions in expected.items():
+              with open(path, 'rb') as image:
+                  assert image.read(8) == b'\x89PNG\r\n\x1a\n'
+                  image.read(8)
+                  actual = struct.unpack('>II', image.read(8))
+              assert actual == dimensions, f'{path}: expected {dimensions}, got {actual}'
+          print('✅ PWA icon dimensions are valid')
+          PY
 
       - name: Test static site serving
         run: |

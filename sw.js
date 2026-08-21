@@ -1,4 +1,4 @@
-const CACHE_NAME = "anagram-solver-v9";
+const CACHE_NAME = "anagram-solver-v10";
 const TAILWIND_CDN = "https://cdn.tailwindcss.com";
 const ASSETS = [
   // Precache only the assets you need for offline. You can include index.html
@@ -8,6 +8,12 @@ const ASSETS = [
   "./letter-tile.js",
   "./layout.js",
   "./manifest.json",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/maskable-192.png",
+  "./icons/maskable-512.png",
+  "./icons/apple-touch-icon.png",
+  "./icons/favicon-32.png",
   "./robots.txt",
 ];
 
@@ -54,8 +60,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Stale-while-revalidate for scripts/styles/images/fonts
-  if (["script", "style", "image", "font"].includes(req.destination)) {
+  // Stale-while-revalidate for the manifest and static assets. In particular,
+  // do not leave an old manifest permanently pinned by the offline cache.
+  if (["manifest", "script", "style", "image", "font"].includes(req.destination)) {
     event.respondWith(staleWhileRevalidate(req));
     return;
   }
