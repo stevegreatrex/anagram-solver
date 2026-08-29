@@ -425,31 +425,9 @@
         }
         if (letterInput.value) handleInput();
 
-        // --- Online API Integration ---
-
-        async function findAnagramsWithAPI(letters) {
-            // Start with local algorithm results as base
-            const localResults = findAnagrams(letters);
-            
-            // Try to validate some words with dictionary API to confirm it's working
-            if (localResults.length > 0) {
-                try {
-                    // Test the first word to see if API is available
-                    const testResponse = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${localResults[0]}`);
-                    if (testResponse.ok) {
-                        // API is working, return the local results as validated
-                        return { text: localResults.join(', '), source: 'online' };
-                    }
-                } catch (e) {
-                    // Dictionary API failed
-                    throw new Error('Dictionary API not available');
-                }
-            }
-            
-            throw new Error('No results or API unavailable');
-        }
-
-        async function findAnagramsLocal(letters) {
+        // Anagram solving is entirely local. The bundled dictionary is the source of
+        // truth, so results remain fast and available without a network connection.
+        function findAnagramsLocal(letters) {
             const results = findAnagrams(letters);
             
             if (results.length === 0) {
@@ -457,17 +435,6 @@
             }
             
             return { text: results.join(', '), source: 'offline' };
-        }
-
-        async function findAnagramsHybrid(letters) {
-            try {
-                // Try online API first
-                return await findAnagramsWithAPI(letters);
-            } catch (error) {
-                console.log('Online API failed, falling back to local search:', error.message);
-                // Fall back to local algorithm
-                return await findAnagramsLocal(letters);
-            }
         }
 
         const showModal = () => resultsModal.classList.remove('hidden');
@@ -547,7 +514,7 @@
             loader.style.display = 'flex';
             resultsContent.innerHTML = '';
             try {
-                const result = await findAnagramsHybrid(currentLetters);
+                const result = findAnagramsLocal(currentLetters);
                 displayResults(result);
             } catch (error) {
                 console.error('Failed to get anagrams:', error);
